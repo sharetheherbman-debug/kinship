@@ -12,9 +12,9 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 const IMAGES = {
-  planning: 'https://images.pexels.com/photos/2305761/pexels-photo-2305761.jpeg',
-  adventure: 'https://images.pexels.com/photos/35503253/pexels-photo-35503253.jpeg',
-  beach: 'https://images.pexels.com/photos/35541050/pexels-photo-35541050.jpeg',
+  planning: 'https://images.pexels.com/photos/7368182/pexels-photo-7368182.jpeg',
+  adventure: 'https://images.pexels.com/photos/1469880/pexels-photo-1469880.jpeg',
+  family: 'https://images.pexels.com/photos/5961944/pexels-photo-5961944.jpeg',
 };
 
 const heroFeatures = [
