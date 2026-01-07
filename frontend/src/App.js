@@ -15,6 +15,8 @@ import Settings from "@/pages/Settings";
 import AdminPanel from "@/pages/AdminPanel";
 import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentCancel from "@/pages/PaymentCancel";
+import LocationTracking from "@/pages/LocationTracking";
+import DocumentVault from "@/pages/DocumentVault";
 
 import "@/App.css";
 
@@ -69,6 +71,8 @@ function AppRoutes() {
       <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
       <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
       <Route path="/payment/cancel" element={<ProtectedRoute><PaymentCancel /></ProtectedRoute>} />
+      <Route path="/tracking" element={<ProtectedRoute><LocationTracking /></ProtectedRoute>} />
+      <Route path="/documents" element={<ProtectedRoute><DocumentVault /></ProtectedRoute>} />
       <Route path="/superadmin-secret-access" element={<AdminPanel />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
