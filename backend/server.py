@@ -44,6 +44,41 @@ api_router = APIRouter(prefix="/api")
 security = HTTPBearer()
 
 # =============================================================================
+# PRICING & CURRENCY CONFIG
+# =============================================================================
+BASE_PRICE_ZAR = 49.0  # R49 per month for up to 10 members
+EXTRA_MEMBERS_PRICE_ZAR = 19.0  # R19 per 5 additional members
+
+# Exchange rates (will be fetched dynamically)
+EXCHANGE_RATES = {
+    'ZAR': 1.0,
+    'USD': 0.055,  # 1 ZAR = 0.055 USD approx
+    'GBP': 0.043,  # 1 ZAR = 0.043 GBP approx
+    'EUR': 0.050,  # 1 ZAR = 0.050 EUR approx
+    'AUD': 0.083,  # 1 ZAR = 0.083 AUD approx
+}
+
+CURRENCY_SYMBOLS = {
+    'ZAR': 'R',
+    'USD': '$',
+    'GBP': '£',
+    'EUR': '€',
+    'AUD': 'A$',
+}
+
+def convert_price(amount_zar: float, to_currency: str) -> float:
+    """Convert ZAR to target currency and round nicely"""
+    rate = EXCHANGE_RATES.get(to_currency, EXCHANGE_RATES['USD'])
+    converted = amount_zar * rate
+    # Round to nice numbers
+    if converted < 1:
+        return round(converted, 2)
+    elif converted < 10:
+        return round(converted * 2) / 2  # Round to nearest 0.50
+    else:
+        return round(converted)
+
+# =============================================================================
 # MODELS
 # =============================================================================
 
@@ -51,6 +86,8 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     name: str
+    country: Optional[str] = "ZA"
+    currency: Optional[str] = "ZAR"
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -62,6 +99,8 @@ class UserResponse(BaseModel):
     name: str
     family_id: Optional[str] = None
     role: str = "member"
+    country: str = "ZA"
+    currency: str = "ZAR"
     created_at: str
 
 class FamilyCreate(BaseModel):
@@ -87,6 +126,7 @@ class TripCreate(BaseModel):
     end_date: str
     description: Optional[str] = ""
     budget: Optional[float] = 0
+    currency: Optional[str] = "ZAR"
 
 class TripResponse(BaseModel):
     id: str
@@ -97,6 +137,7 @@ class TripResponse(BaseModel):
     end_date: str
     description: str
     budget: float
+    currency: str
     itinerary: List[Dict[str, Any]]
     packing_list: List[Dict[str, Any]]
     created_by: str
@@ -138,12 +179,47 @@ class BudgetItem(BaseModel):
     category: str
     description: str
     amount: float
-    currency: str = "USD"
+    currency: str = "ZAR"
     paid_by: Optional[str] = ""
+
+class ExpenseSplit(BaseModel):
+    trip_id: str
+    expense_id: str
+    split_between: List[str]  # List of user IDs
+
+class MilestoneCreate(BaseModel):
+    family_id: str
+    title: str
+    date: str
+    type: str  # birthday, anniversary, travel_anniversary
+    member_id: Optional[str] = ""
+
+class DocumentCreate(BaseModel):
+    family_id: str
+    member_id: str
+    doc_type: str  # passport, visa, id, insurance
+    doc_number: str
+    expiry_date: str
+    country: Optional[str] = ""
+
+class LocationUpdate(BaseModel):
+    family_id: str
+    latitude: float
+    longitude: float
+    accuracy: Optional[float] = 0
+    battery_level: Optional[int] = 100
+
+class TrackingSettings(BaseModel):
+    enabled: bool = False
+    share_with_family: bool = True
+    share_with_members: List[str] = []
+    geofence_alerts: bool = False
+    geofence_locations: List[Dict[str, Any]] = []
 
 class CheckoutRequest(BaseModel):
     plan: str
     origin_url: str
+    currency: str = "ZAR"
 
 # =============================================================================
 # AUTH HELPERS
@@ -177,6 +253,59 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(status_code=401, detail="Invalid token")
 
 # =============================================================================
+# PRICING ROUTES
+# =============================================================================
+
+@api_router.get("/pricing")
+async def get_pricing(currency: str = "ZAR"):
+    """Get pricing in user's currency"""
+    base_price = convert_price(BASE_PRICE_ZAR, currency)
+    extra_price = convert_price(EXTRA_MEMBERS_PRICE_ZAR, currency)
+    symbol = CURRENCY_SYMBOLS.get(currency, currency)
+    
+    return {
+        'currency': currency,
+        'symbol': symbol,
+        'base_plan': {
+            'name': 'Family Plan',
+            'price': base_price,
+            'formatted': f"{symbol}{base_price}",
+            'period': 'month',
+            'members_included': 10,
+            'description': f'Up to 10 family members'
+        },
+        'extra_members': {
+            'price': extra_price,
+            'formatted': f"{symbol}{extra_price}",
+            'per': 5,
+            'description': f'Per 5 additional members/month'
+        },
+        'features': [
+            'Unlimited trips',
+            'Real-time family chat',
+            'AI trip planning',
+            'Location tracking',
+            'Document vault',
+            'Expense splitting',
+            'Weather forecasts',
+            'Milestone reminders'
+        ]
+    }
+
+@api_router.get("/currencies")
+async def get_currencies():
+    """Get supported currencies"""
+    return {
+        'currencies': [
+            {'code': 'ZAR', 'name': 'South African Rand', 'symbol': 'R'},
+            {'code': 'USD', 'name': 'US Dollar', 'symbol': '$'},
+            {'code': 'GBP', 'name': 'British Pound', 'symbol': '£'},
+            {'code': 'EUR', 'name': 'Euro', 'symbol': '€'},
+            {'code': 'AUD', 'name': 'Australian Dollar', 'symbol': 'A$'},
+        ]
+    }
+
+# =============================================================================
 # AUTH ROUTES
 # =============================================================================
 
@@ -194,6 +323,9 @@ async def register(data: UserCreate):
         'name': data.name,
         'family_id': None,
         'role': 'member',
+        'country': data.country or 'ZA',
+        'currency': data.currency or 'ZAR',
+        'tracking_settings': {'enabled': False, 'share_with_family': True},
         'created_at': datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(user)
@@ -206,7 +338,9 @@ async def register(data: UserCreate):
             'email': data.email,
             'name': data.name,
             'family_id': None,
-            'role': 'member'
+            'role': 'member',
+            'country': data.country or 'ZA',
+            'currency': data.currency or 'ZAR'
         }
     }
 
@@ -224,7 +358,9 @@ async def login(data: UserLogin):
             'email': user['email'],
             'name': user['name'],
             'family_id': user.get('family_id'),
-            'role': user.get('role', 'member')
+            'role': user.get('role', 'member'),
+            'country': user.get('country', 'ZA'),
+            'currency': user.get('currency', 'ZAR')
         }
     }
 
@@ -235,8 +371,23 @@ async def get_me(user: dict = Depends(get_current_user)):
         'email': user['email'],
         'name': user['name'],
         'family_id': user.get('family_id'),
-        'role': user.get('role', 'member')
+        'role': user.get('role', 'member'),
+        'country': user.get('country', 'ZA'),
+        'currency': user.get('currency', 'ZAR')
     }
+
+@api_router.put("/auth/settings")
+async def update_user_settings(currency: str = None, country: str = None, user: dict = Depends(get_current_user)):
+    updates = {}
+    if currency:
+        updates['currency'] = currency
+    if country:
+        updates['country'] = country
+    
+    if updates:
+        await db.users.update_one({'id': user['id']}, {'$set': updates})
+    
+    return {'message': 'Settings updated'}
 
 # =============================================================================
 # FAMILY ROUTES
@@ -254,11 +405,11 @@ async def create_family(data: FamilyCreate, user: dict = Depends(get_current_use
         'admin_id': user['id'],
         'members': [user['id']],
         'invite_code': invite_code,
+        'member_count': 1,
         'created_at': datetime.now(timezone.utc).isoformat()
     }
     await db.families.insert_one(family)
     
-    # Update user's family_id and role
     await db.users.update_one(
         {'id': user['id']},
         {'$set': {'family_id': family_id, 'role': 'admin'}}
@@ -284,7 +435,7 @@ async def join_family(data: FamilyInvite, user: dict = Depends(get_current_user)
     
     await db.families.update_one(
         {'id': family['id']},
-        {'$push': {'members': user['id']}}
+        {'$push': {'members': user['id']}, '$inc': {'member_count': 1}}
     )
     await db.users.update_one(
         {'id': user['id']},
@@ -302,7 +453,6 @@ async def get_my_family(user: dict = Depends(get_current_user)):
     if not family:
         return None
     
-    # Get member details
     members = await db.users.find(
         {'id': {'$in': family['members']}},
         {'_id': 0, 'password': 0}
@@ -345,14 +495,15 @@ async def create_trip(data: TripCreate, user: dict = Depends(get_current_user)):
         'end_date': data.end_date,
         'description': data.description or "",
         'budget': data.budget or 0,
+        'currency': data.currency or user.get('currency', 'ZAR'),
         'itinerary': [],
         'packing_list': [],
+        'expenses': [],
         'created_by': user['id'],
         'created_at': datetime.now(timezone.utc).isoformat()
     }
     await db.trips.insert_one(trip)
     
-    # Return trip without MongoDB _id field
     trip_response = {k: v for k, v in trip.items() if k != '_id'}
     return trip_response
 
@@ -385,7 +536,8 @@ async def update_trip(trip_id: str, data: TripCreate, user: dict = Depends(get_c
             'start_date': data.start_date,
             'end_date': data.end_date,
             'description': data.description or "",
-            'budget': data.budget or 0
+            'budget': data.budget or 0,
+            'currency': data.currency or 'ZAR'
         }}
     )
     
@@ -412,7 +564,6 @@ async def add_itinerary_item(trip_id: str, data: ItineraryItem, user: dict = Dep
     }
     await db.trips.update_one({'id': trip_id}, {'$push': {'itinerary': item}})
     
-    # Broadcast update
     trip = await db.trips.find_one({'id': trip_id}, {'_id': 0})
     await sio.emit('trip_update', {'trip_id': trip_id, 'trip': trip}, room=trip['family_id'])
     
@@ -451,7 +602,7 @@ async def toggle_packing_item(trip_id: str, item_id: str, user: dict = Depends(g
     return {'message': 'Item toggled'}
 
 # =============================================================================
-# BUDGET ROUTES
+# BUDGET & EXPENSE SPLITTING ROUTES
 # =============================================================================
 
 @api_router.post("/trips/{trip_id}/budget")
@@ -464,11 +615,12 @@ async def add_budget_item(trip_id: str, data: BudgetItem, user: dict = Depends(g
         'amount': data.amount,
         'currency': data.currency,
         'paid_by': data.paid_by or user['id'],
+        'paid_by_name': user['name'],
+        'split_between': [],
         'created_at': datetime.now(timezone.utc).isoformat()
     }
     await db.budget_items.insert_one(item)
     
-    # Return item without MongoDB _id field
     item_response = {k: v for k, v in item.items() if k != '_id'}
     return item_response
 
@@ -476,6 +628,276 @@ async def add_budget_item(trip_id: str, data: BudgetItem, user: dict = Depends(g
 async def get_budget_items(trip_id: str, user: dict = Depends(get_current_user)):
     items = await db.budget_items.find({'trip_id': trip_id}, {'_id': 0}).to_list(500)
     return items
+
+@api_router.post("/trips/{trip_id}/budget/{expense_id}/split")
+async def split_expense(trip_id: str, expense_id: str, data: ExpenseSplit, user: dict = Depends(get_current_user)):
+    """Split an expense between family members"""
+    await db.budget_items.update_one(
+        {'id': expense_id},
+        {'$set': {'split_between': data.split_between}}
+    )
+    return {'message': 'Expense split updated'}
+
+@api_router.get("/trips/{trip_id}/budget/summary")
+async def get_budget_summary(trip_id: str, user: dict = Depends(get_current_user)):
+    """Get expense summary with who owes who"""
+    items = await db.budget_items.find({'trip_id': trip_id}, {'_id': 0}).to_list(500)
+    
+    # Calculate totals per person
+    paid_by = {}
+    owes = {}
+    
+    for item in items:
+        payer = item.get('paid_by')
+        amount = item.get('amount', 0)
+        split = item.get('split_between', [])
+        
+        if payer:
+            paid_by[payer] = paid_by.get(payer, 0) + amount
+        
+        if split:
+            split_amount = amount / len(split)
+            for member in split:
+                if member != payer:
+                    owes[member] = owes.get(member, 0) + split_amount
+    
+    return {
+        'total_spent': sum(item.get('amount', 0) for item in items),
+        'paid_by': paid_by,
+        'owes': owes,
+        'items': items
+    }
+
+# =============================================================================
+# MILESTONES ROUTES
+# =============================================================================
+
+@api_router.post("/milestones")
+async def create_milestone(data: MilestoneCreate, user: dict = Depends(get_current_user)):
+    milestone = {
+        'id': str(uuid.uuid4()),
+        'family_id': data.family_id,
+        'title': data.title,
+        'date': data.date,
+        'type': data.type,
+        'member_id': data.member_id or "",
+        'created_by': user['id'],
+        'created_at': datetime.now(timezone.utc).isoformat()
+    }
+    await db.milestones.insert_one(milestone)
+    
+    response = {k: v for k, v in milestone.items() if k != '_id'}
+    return response
+
+@api_router.get("/milestones/{family_id}")
+async def get_milestones(family_id: str, user: dict = Depends(get_current_user)):
+    milestones = await db.milestones.find({'family_id': family_id}, {'_id': 0}).to_list(100)
+    return milestones
+
+@api_router.get("/milestones/{family_id}/upcoming")
+async def get_upcoming_milestones(family_id: str, user: dict = Depends(get_current_user)):
+    """Get milestones in the next 30 days"""
+    today = datetime.now(timezone.utc)
+    thirty_days = today + timedelta(days=30)
+    
+    milestones = await db.milestones.find({'family_id': family_id}, {'_id': 0}).to_list(100)
+    
+    upcoming = []
+    for m in milestones:
+        try:
+            m_date = datetime.fromisoformat(m['date'].replace('Z', '+00:00'))
+            # For recurring events (birthdays), check this year
+            this_year_date = m_date.replace(year=today.year)
+            if today <= this_year_date <= thirty_days:
+                upcoming.append({**m, 'upcoming_date': this_year_date.isoformat()})
+        except:
+            pass
+    
+    return sorted(upcoming, key=lambda x: x.get('upcoming_date', ''))
+
+# =============================================================================
+# DOCUMENT VAULT ROUTES
+# =============================================================================
+
+@api_router.post("/documents")
+async def create_document(data: DocumentCreate, user: dict = Depends(get_current_user)):
+    doc = {
+        'id': str(uuid.uuid4()),
+        'family_id': data.family_id,
+        'member_id': data.member_id,
+        'doc_type': data.doc_type,
+        'doc_number': data.doc_number[-4:],  # Only store last 4 chars for security
+        'expiry_date': data.expiry_date,
+        'country': data.country or "",
+        'created_by': user['id'],
+        'created_at': datetime.now(timezone.utc).isoformat()
+    }
+    await db.documents.insert_one(doc)
+    
+    response = {k: v for k, v in doc.items() if k != '_id'}
+    return response
+
+@api_router.get("/documents/{family_id}")
+async def get_documents(family_id: str, user: dict = Depends(get_current_user)):
+    docs = await db.documents.find({'family_id': family_id}, {'_id': 0}).to_list(100)
+    return docs
+
+@api_router.get("/documents/{family_id}/expiring")
+async def get_expiring_documents(family_id: str, user: dict = Depends(get_current_user)):
+    """Get documents expiring in the next 90 days"""
+    today = datetime.now(timezone.utc)
+    ninety_days = today + timedelta(days=90)
+    
+    docs = await db.documents.find({'family_id': family_id}, {'_id': 0}).to_list(100)
+    
+    expiring = []
+    for doc in docs:
+        try:
+            exp_date = datetime.fromisoformat(doc['expiry_date'].replace('Z', '+00:00'))
+            if exp_date <= ninety_days:
+                days_until = (exp_date - today).days
+                expiring.append({**doc, 'days_until_expiry': days_until})
+        except:
+            pass
+    
+    return sorted(expiring, key=lambda x: x.get('days_until_expiry', 999))
+
+# =============================================================================
+# LOCATION TRACKING ROUTES
+# =============================================================================
+
+@api_router.put("/tracking/settings")
+async def update_tracking_settings(data: TrackingSettings, user: dict = Depends(get_current_user)):
+    await db.users.update_one(
+        {'id': user['id']},
+        {'$set': {'tracking_settings': data.model_dump()}}
+    )
+    return {'message': 'Tracking settings updated'}
+
+@api_router.get("/tracking/settings")
+async def get_tracking_settings(user: dict = Depends(get_current_user)):
+    return user.get('tracking_settings', {'enabled': False, 'share_with_family': True})
+
+@api_router.post("/tracking/location")
+async def update_location(data: LocationUpdate, user: dict = Depends(get_current_user)):
+    """Update user's current location"""
+    location = {
+        'id': str(uuid.uuid4()),
+        'user_id': user['id'],
+        'family_id': data.family_id,
+        'latitude': data.latitude,
+        'longitude': data.longitude,
+        'accuracy': data.accuracy,
+        'battery_level': data.battery_level,
+        'timestamp': datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Update current location
+    await db.locations.update_one(
+        {'user_id': user['id']},
+        {'$set': location},
+        upsert=True
+    )
+    
+    # Add to history
+    await db.location_history.insert_one(location)
+    
+    # Broadcast to family
+    await sio.emit('location_update', {
+        'user_id': user['id'],
+        'user_name': user['name'],
+        'latitude': data.latitude,
+        'longitude': data.longitude,
+        'timestamp': location['timestamp']
+    }, room=data.family_id)
+    
+    return {'message': 'Location updated'}
+
+@api_router.get("/tracking/family/{family_id}")
+async def get_family_locations(family_id: str, user: dict = Depends(get_current_user)):
+    """Get current locations of all family members who have sharing enabled"""
+    family = await db.families.find_one({'id': family_id}, {'_id': 0})
+    if not family:
+        raise HTTPException(status_code=404, detail="Family not found")
+    
+    # Get members with tracking enabled
+    members = await db.users.find(
+        {'id': {'$in': family['members']}, 'tracking_settings.enabled': True},
+        {'_id': 0, 'password': 0}
+    ).to_list(100)
+    
+    member_ids = [m['id'] for m in members]
+    
+    locations = await db.locations.find(
+        {'user_id': {'$in': member_ids}},
+        {'_id': 0}
+    ).to_list(100)
+    
+    # Combine member info with locations
+    result = []
+    for loc in locations:
+        member = next((m for m in members if m['id'] == loc['user_id']), None)
+        if member:
+            result.append({
+                **loc,
+                'user_name': member['name'],
+                'user_email': member['email']
+            })
+    
+    return result
+
+@api_router.get("/tracking/history/{user_id}")
+async def get_location_history(user_id: str, days: int = 7, user: dict = Depends(get_current_user)):
+    """Get location history for a user"""
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    
+    history = await db.location_history.find(
+        {'user_id': user_id, 'timestamp': {'$gte': since.isoformat()}},
+        {'_id': 0}
+    ).sort('timestamp', -1).to_list(1000)
+    
+    return history
+
+# =============================================================================
+# WEATHER ROUTES
+# =============================================================================
+
+@api_router.get("/weather/{destination}")
+async def get_weather(destination: str, user: dict = Depends(get_current_user)):
+    """Get weather forecast for a destination (using free API)"""
+    try:
+        async with httpx.AsyncClient() as client:
+            # Using wttr.in free API
+            response = await client.get(
+                f"https://wttr.in/{destination}?format=j1",
+                timeout=10.0
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                current = data.get('current_condition', [{}])[0]
+                forecast = data.get('weather', [])[:5]
+                
+                return {
+                    'destination': destination,
+                    'current': {
+                        'temp_c': current.get('temp_C'),
+                        'temp_f': current.get('temp_F'),
+                        'condition': current.get('weatherDesc', [{}])[0].get('value'),
+                        'humidity': current.get('humidity'),
+                        'wind_kph': current.get('windspeedKmph')
+                    },
+                    'forecast': [{
+                        'date': day.get('date'),
+                        'max_c': day.get('maxtempC'),
+                        'min_c': day.get('mintempC'),
+                        'condition': day.get('hourly', [{}])[4].get('weatherDesc', [{}])[0].get('value', '')
+                    } for day in forecast]
+                }
+    except Exception as e:
+        logger.error(f"Weather API error: {str(e)}")
+    
+    return {'destination': destination, 'error': 'Weather data unavailable'}
 
 # =============================================================================
 # CHAT ROUTES
@@ -493,7 +915,6 @@ async def send_message(data: ChatMessage, user: dict = Depends(get_current_user)
     }
     await db.messages.insert_one(message)
     
-    # Broadcast to family room
     broadcast_msg = {k: v for k, v in message.items() if k != '_id'}
     await sio.emit('new_message', broadcast_msg, room=data.family_id)
     
@@ -598,10 +1019,8 @@ async def generate_itinerary(trip_id: str, user: dict = Depends(get_current_user
             result = response.json()
             content = result['choices'][0]['message']['content']
             
-            # Try to parse JSON from response
             import json
             try:
-                # Handle if wrapped in markdown code blocks
                 if '```json' in content:
                     content = content.split('```json')[1].split('```')[0]
                 elif '```' in content:
@@ -609,11 +1028,9 @@ async def generate_itinerary(trip_id: str, user: dict = Depends(get_current_user
                 
                 itinerary_items = json.loads(content.strip())
                 
-                # Add IDs to items
                 for item in itinerary_items:
                     item['id'] = str(uuid.uuid4())
                 
-                # Update trip with new itinerary
                 await db.trips.update_one({'id': trip_id}, {'$set': {'itinerary': itinerary_items}})
                 
                 return {'itinerary': itinerary_items}
@@ -629,19 +1046,14 @@ async def generate_itinerary(trip_id: str, user: dict = Depends(get_current_user
 # =============================================================================
 
 STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', '')
-SUBSCRIPTION_PLANS = {
-    'monthly': {'amount': 9.99, 'name': 'Monthly Premium'},
-    'yearly': {'amount': 99.99, 'name': 'Yearly Premium'},
-}
 
 @api_router.post("/payments/checkout")
 async def create_checkout(data: CheckoutRequest, user: dict = Depends(get_current_user)):
     if not STRIPE_API_KEY:
         raise HTTPException(status_code=500, detail="Payment system not configured")
     
-    plan = SUBSCRIPTION_PLANS.get(data.plan)
-    if not plan:
-        raise HTTPException(status_code=400, detail="Invalid plan")
+    # Get pricing in user's currency
+    price = convert_price(BASE_PRICE_ZAR, data.currency)
     
     try:
         from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
@@ -652,26 +1064,25 @@ async def create_checkout(data: CheckoutRequest, user: dict = Depends(get_curren
         stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=f"{data.origin_url}/api/webhook/stripe")
         
         checkout_request = CheckoutSessionRequest(
-            amount=plan['amount'],
-            currency='usd',
+            amount=float(price),
+            currency=data.currency.lower(),
             success_url=success_url,
             cancel_url=cancel_url,
             metadata={
                 'user_id': user['id'],
                 'plan': data.plan,
-                'plan_name': plan['name']
+                'original_currency': data.currency
             }
         )
         
         session = await stripe_checkout.create_checkout_session(checkout_request)
         
-        # Create payment transaction record
         await db.payment_transactions.insert_one({
             'id': str(uuid.uuid4()),
             'session_id': session.session_id,
             'user_id': user['id'],
-            'amount': plan['amount'],
-            'currency': 'usd',
+            'amount': price,
+            'currency': data.currency,
             'plan': data.plan,
             'status': 'pending',
             'created_at': datetime.now(timezone.utc).isoformat()
@@ -693,7 +1104,6 @@ async def get_payment_status(session_id: str, user: dict = Depends(get_current_u
         stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
         status = await stripe_checkout.get_checkout_status(session_id)
         
-        # Update transaction in database
         await db.payment_transactions.update_one(
             {'session_id': session_id},
             {'$set': {'status': status.payment_status, 'updated_at': datetime.now(timezone.utc).isoformat()}}
@@ -712,14 +1122,13 @@ async def get_payment_status(session_id: str, user: dict = Depends(get_current_u
         raise HTTPException(status_code=500, detail=str(e))
 
 # =============================================================================
-# ADMIN ROUTES (Protected by admin check)
+# ADMIN ROUTES
 # =============================================================================
 
 ADMIN_SECRET = os.environ.get('ADMIN_SECRET', 'kinship-admin-2024')
 
 async def verify_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):
     user = await get_current_user(credentials)
-    # Check if superadmin or has admin_secret header
     if user.get('is_superadmin'):
         return user
     raise HTTPException(status_code=403, detail="Admin access required")
@@ -744,7 +1153,6 @@ async def setup_admin(secret: str):
     if secret != ADMIN_SECRET:
         raise HTTPException(status_code=403, detail="Invalid admin secret")
     
-    # Check if admin exists
     admin = await db.users.find_one({'email': 'admin@kinship.app'})
     if admin:
         return {'message': 'Admin already exists'}
@@ -758,6 +1166,8 @@ async def setup_admin(secret: str):
         'family_id': None,
         'role': 'superadmin',
         'is_superadmin': True,
+        'country': 'ZA',
+        'currency': 'ZAR',
         'created_at': datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(admin_user)
@@ -804,7 +1214,7 @@ async def typing(sid, data):
 
 @api_router.get("/")
 async def root():
-    return {"message": "Kinship Journeys API", "version": "1.0.0"}
+    return {"message": "Kinship Journeys API", "version": "2.0.0"}
 
 @api_router.get("/health")
 async def health():
