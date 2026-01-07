@@ -1,13 +1,25 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Globe, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
+import axios from 'axios';
+import { Globe, Mail, Lock, User, ArrowRight, Loader2, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
+
+const CURRENCIES = [
+  { code: 'ZAR', name: 'South African Rand', symbol: 'R' },
+  { code: 'USD', name: 'US Dollar', symbol: '$' },
+  { code: 'GBP', name: 'British Pound', symbol: '£' },
+  { code: 'EUR', name: 'Euro', symbol: '€' },
+  { code: 'AUD', name: 'Australian Dollar', symbol: 'A$' },
+];
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -23,6 +35,26 @@ export default function AuthPage() {
   const [registerEmail, setRegisterEmail] = useState('');
   const [registerPassword, setRegisterPassword] = useState('');
   const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
+  const [registerCurrency, setRegisterCurrency] = useState('ZAR');
+  const [registerCountry, setRegisterCountry] = useState('ZA');
+
+  // Auto-detect currency based on timezone
+  useEffect(() => {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (timezone.includes('London') || timezone.includes('Europe/London')) {
+      setRegisterCurrency('GBP');
+      setRegisterCountry('GB');
+    } else if (timezone.includes('America')) {
+      setRegisterCurrency('USD');
+      setRegisterCountry('US');
+    } else if (timezone.includes('Europe')) {
+      setRegisterCurrency('EUR');
+      setRegisterCountry('EU');
+    } else if (timezone.includes('Australia')) {
+      setRegisterCurrency('AUD');
+      setRegisterCountry('AU');
+    }
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -60,7 +92,7 @@ export default function AuthPage() {
 
     setLoading(true);
     try {
-      await register(registerName, registerEmail, registerPassword);
+      await register(registerName, registerEmail, registerPassword, registerCountry, registerCurrency);
       toast.success('Account created successfully!');
       navigate('/dashboard');
     } catch (error) {
@@ -257,6 +289,23 @@ export default function AuthPage() {
                       data-testid="register-confirm-password-input"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Your Currency</Label>
+                  <Select value={registerCurrency} onValueChange={setRegisterCurrency}>
+                    <SelectTrigger className="input-base">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CURRENCIES.map(curr => (
+                        <SelectItem key={curr.code} value={curr.code}>
+                          {curr.symbol} {curr.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Prices will be shown in your currency</p>
                 </div>
 
                 <Button 
