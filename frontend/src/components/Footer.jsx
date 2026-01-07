@@ -14,7 +14,6 @@ export default function Footer() {
     company: [
       { name: 'About Us', path: '/about' },
       { name: 'Contact', path: '/contact' },
-      { name: 'Careers', path: '/careers' },
     ],
     legal: [
       { name: 'Privacy Policy', path: '/privacy' },
