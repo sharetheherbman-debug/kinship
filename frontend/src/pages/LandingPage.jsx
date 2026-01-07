@@ -423,7 +423,8 @@ export default function LandingPage() {
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-4">
-            <motion.div\n              initial={{ opacity: 0, y: 40 }}
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               className="md:col-span-2 relative rounded-3xl overflow-hidden h-[400px] group"
