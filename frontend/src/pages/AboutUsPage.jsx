@@ -259,9 +259,9 @@ export default function AboutUsPage() {
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </Link>
-            <Link to="/careers">
+            <Link to="/contact">
               <Button variant="outline" className="border-white/20 text-white hover:bg-white/10 text-lg px-10 py-6 rounded-2xl">
-                View Open Roles
+                Contact Us
               </Button>
             </Link>
           </div>
