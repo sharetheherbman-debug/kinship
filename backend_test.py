@@ -345,6 +345,123 @@ class KinshipJourneysAPITester:
         
         return True
 
+    def test_pricing_and_currency(self):
+        """Test multi-currency pricing functionality"""
+        print("\n=== PRICING & CURRENCY TESTS ===")
+        
+        # Test get currencies
+        self.run_test("Get Supported Currencies", "GET", "api/currencies", 200)
+        
+        # Test pricing in different currencies
+        currencies = ['ZAR', 'USD', 'GBP', 'EUR', 'AUD']
+        for currency in currencies:
+            success, response = self.run_test(
+                f"Get Pricing in {currency}",
+                "GET",
+                f"api/pricing?currency={currency}",
+                200
+            )
+            if success:
+                print(f"   {currency} pricing: {response.get('base_plan', {}).get('formatted', 'N/A')}")
+        
+        return True
+
+    def test_location_tracking(self):
+        """Test location tracking functionality"""
+        print("\n=== LOCATION TRACKING TESTS ===")
+        
+        if not self.family_id:
+            print("❌ No family ID, skipping location tests")
+            return False
+        
+        # Test get tracking settings
+        self.run_test("Get Tracking Settings", "GET", "api/tracking/settings", 200)
+        
+        # Test update tracking settings
+        settings_data = {
+            "enabled": True,
+            "share_with_family": True,
+            "geofence_alerts": False
+        }
+        self.run_test("Update Tracking Settings", "PUT", "api/tracking/settings", 200, data=settings_data)
+        
+        # Test location update
+        location_data = {
+            "family_id": self.family_id,
+            "latitude": -33.9249,
+            "longitude": 18.4241,
+            "accuracy": 10.0,
+            "battery_level": 85
+        }
+        self.run_test("Update Location", "POST", "api/tracking/location", 200, data=location_data)
+        
+        # Test get family locations
+        self.run_test("Get Family Locations", "GET", f"api/tracking/family/{self.family_id}", 200)
+        
+        return True
+
+    def test_document_vault(self):
+        """Test document vault functionality"""
+        print("\n=== DOCUMENT VAULT TESTS ===")
+        
+        if not self.family_id:
+            print("❌ No family ID, skipping document tests")
+            return False
+        
+        # Test create document
+        doc_data = {
+            "family_id": self.family_id,
+            "member_id": self.user_id,
+            "doc_type": "passport",
+            "doc_number": "1234567890",
+            "expiry_date": "2025-12-31",
+            "country": "South Africa"
+        }
+        self.run_test("Create Document", "POST", "api/documents", 200, data=doc_data)
+        
+        # Test get documents
+        self.run_test("Get Documents", "GET", f"api/documents/{self.family_id}", 200)
+        
+        # Test get expiring documents
+        self.run_test("Get Expiring Documents", "GET", f"api/documents/{self.family_id}/expiring", 200)
+        
+        return True
+
+    def test_milestones(self):
+        """Test milestone functionality"""
+        print("\n=== MILESTONE TESTS ===")
+        
+        if not self.family_id:
+            print("❌ No family ID, skipping milestone tests")
+            return False
+        
+        # Test create milestone
+        milestone_data = {
+            "family_id": self.family_id,
+            "title": "John's Birthday",
+            "date": "2024-12-25",
+            "type": "birthday",
+            "member_id": self.user_id
+        }
+        self.run_test("Create Milestone", "POST", "api/milestones", 200, data=milestone_data)
+        
+        # Test get milestones
+        self.run_test("Get Milestones", "GET", f"api/milestones/{self.family_id}", 200)
+        
+        # Test get upcoming milestones
+        self.run_test("Get Upcoming Milestones", "GET", f"api/milestones/{self.family_id}/upcoming", 200)
+        
+        return True
+
+    def test_weather_api(self):
+        """Test weather functionality"""
+        print("\n=== WEATHER TESTS ===")
+        
+        # Test weather for destination
+        self.run_test("Get Weather for Cape Town", "GET", "api/weather/Cape Town", 200)
+        
+        return True
+
     def test_ai_functionality(self):
         """Test AI functionality (may fail if no OpenAI key)"""
         print("\n=== AI ASSISTANT TESTS ===")
