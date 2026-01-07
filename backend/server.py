@@ -467,7 +467,10 @@ async def add_budget_item(trip_id: str, data: BudgetItem, user: dict = Depends(g
         'created_at': datetime.now(timezone.utc).isoformat()
     }
     await db.budget_items.insert_one(item)
-    return item
+    
+    # Return item without MongoDB _id field
+    item_response = {k: v for k, v in item.items() if k != '_id'}
+    return item_response
 
 @api_router.get("/trips/{trip_id}/budget")
 async def get_budget_items(trip_id: str, user: dict = Depends(get_current_user)):
