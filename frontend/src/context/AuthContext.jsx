@@ -68,8 +68,8 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
-  const register = async (name, email, password) => {
-    const response = await axios.post(`${API_URL}/api/auth/register`, { name, email, password });
+  const register = async (name, email, password, country = 'ZA', currency = 'ZAR') => {
+    const response = await axios.post(`${API_URL}/api/auth/register`, { name, email, password, country, currency });
     const { token: newToken, user: userData } = response.data;
     
     localStorage.setItem('kinship_token', newToken);
