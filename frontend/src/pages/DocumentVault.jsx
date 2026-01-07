@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import axios from 'axios';
 import { 
   ArrowLeft, FileText, Plus, AlertTriangle, Calendar,
-  Passport, CreditCard, Shield, Loader2, Trash2
+  CreditCard, Shield, Loader2, Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
