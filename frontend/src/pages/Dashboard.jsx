@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
+import Footer from '@/components/Footer';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
