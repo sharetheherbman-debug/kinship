@@ -352,7 +352,9 @@ async def create_trip(data: TripCreate, user: dict = Depends(get_current_user)):
     }
     await db.trips.insert_one(trip)
     
-    return trip
+    # Return trip without MongoDB _id field
+    trip_response = {k: v for k, v in trip.items() if k != '_id'}
+    return trip_response
 
 @api_router.get("/trips")
 async def get_trips(user: dict = Depends(get_current_user)):
