@@ -1,58 +1,60 @@
 # Kinship Journeys - Product Requirements Document
 
-## Original Problem Statement
-Build Kinship Journeys - an all-in-one family travel planning and collaboration PWA for global families.
+## Overview
+Family travel planning PWA with modern, unique design - not stock standard.
 
-## User Requirements (Updated)
-- **Color Scheme**: Teal/Cyan (#14B8A6) - fresh, travel-inspired
-- **Pricing**: R49/month ZAR (base), auto-convert to user's currency
-- **Extra Members**: R19/month per 5 additional members (beyond 10)
+## User Requirements Implemented
+- **Design**: Modern, unique UI with teal/cyan color scheme (#14B8A6)
+- **Pricing**: USD only - $4.99/month or $49.99/year (Save $10)
+- **Extra members**: $1.99/month per 5 additional (beyond 10)
 - **Copyright**: 2026
-- **Branding**: No Emergent dependencies or branding
+- **Branding**: No Emergent dependencies, clean branding
 
 ## Architecture
 - **Frontend**: React.js + Tailwind CSS + Shadcn UI + Framer Motion
-- **Backend**: FastAPI (Python) + Socket.IO
+- **Backend**: FastAPI + Socket.IO
 - **Database**: MongoDB
-- **Integrations**: OpenAI GPT-4 (user provides key), Stripe Payments
+- **Integrations**: OpenAI GPT-4 (user provides key), Stripe
 
-## User Personas
-1. **Family Admin**: Creates and manages family groups, invites members
-2. **Family Member**: Collaborates on trips, uses chat, tracks budgets
-3. **Super Admin**: /superadmin-secret-access for management
+## Pages Structure
+- `/` - Landing Page (hero, feature preview, testimonial, CTA)
+- `/features` - Full features page (9 main features)
+- `/pricing` - Pricing page (monthly/yearly toggle, FAQs)
+- `/auth` - Login/Register
+- `/dashboard` - Family dashboard with countdown timer
+- `/trips` - Trip planner
+- `/trips/:id` - Trip detail (itinerary, packing, budget)
+- `/chat` - Real-time family chat
+- `/ai-assistant` - AI travel assistant
+- `/tracking` - Location tracking dashboard
+- `/documents` - Document vault
+- `/settings` - User settings
+- `/superadmin-secret-access` - Admin panel
 
-## Core Features Implemented
-- [x] JWT Authentication with currency selection
-- [x] Multi-currency pricing (ZAR, USD, GBP, EUR, AUD)
-- [x] Family Group Management
+## Core Features
+- [x] JWT Authentication
+- [x] Family Groups with invite codes
 - [x] Trip Planning with live countdown timers
-- [x] Itinerary Builder (manual + AI generation)
+- [x] Itinerary Builder (manual + AI)
 - [x] Real-time Family Chat (Socket.IO)
 - [x] Budget Tracker with expense splitting
-- [x] Packing List Management
-- [x] Location Tracking with consent & settings
+- [x] Packing Lists
+- [x] Location Tracking with consent
 - [x] Document Vault with expiry alerts
-- [x] Milestone Tracker (birthdays, anniversaries)
-- [x] Weather Forecasts for destinations
-- [x] AI Assistant (requires OpenAI API key)
-- [x] Premium Subscription (Stripe)
-- [x] Hidden Admin Panel
+- [x] Milestone Tracker
+- [x] Weather Forecasts
+- [x] AI Assistant (requires OpenAI key)
+- [x] Stripe Payments
 
-## Pricing Model
-| Currency | Base (10 members) | Extra (per 5) |
-|----------|-------------------|---------------|
-| ZAR      | R49               | R19           |
-| USD      | $2.50             | $1.00         |
-| GBP      | £2.00             | £0.80         |
-| EUR      | €2.50             | €1.00         |
-| AUD      | A$4.00            | A$1.50        |
+## Components
+- `Navbar` - Responsive nav with Features/Pricing links
+- `Footer` - Full footer on all pages with 2026 copyright
 
 ## Setup Required
-1. Add OpenAI API key: `/app/backend/.env` → `OPENAI_API_KEY=your-key`
-2. Stripe is pre-configured with test keys
+Add OpenAI API key: `/app/backend/.env` → `OPENAI_API_KEY=your-key`
 
 ## Next Tasks
 1. Photo gallery with cloud storage
 2. PWA service worker for offline support
 3. Push notifications
-4. Booking search integrations (flights/hotels)
+4. Booking integrations
