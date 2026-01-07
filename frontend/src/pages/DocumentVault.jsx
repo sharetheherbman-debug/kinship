@@ -17,7 +17,7 @@ import { useAuth } from '@/context/AuthContext';
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const DOC_TYPES = [
-  { value: 'passport', label: 'Passport', icon: Passport },
+  { value: 'passport', label: 'Passport', icon: FileText },
   { value: 'visa', label: 'Visa', icon: FileText },
   { value: 'id', label: 'ID Card', icon: CreditCard },
   { value: 'insurance', label: 'Travel Insurance', icon: Shield },
