@@ -17,6 +17,8 @@ import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentCancel from "@/pages/PaymentCancel";
 import LocationTracking from "@/pages/LocationTracking";
 import DocumentVault from "@/pages/DocumentVault";
+import FeaturesPage from "@/pages/FeaturesPage";
+import PricingPage from "@/pages/PricingPage";
 
 import "@/App.css";
 
@@ -62,6 +64,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+      <Route path="/features" element={<FeaturesPage />} />
+      <Route path="/pricing" element={<PricingPage />} />
       <Route path="/auth" element={<PublicRoute><AuthPage /></PublicRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/trips" element={<ProtectedRoute><TripPlanner /></ProtectedRoute>} />
