@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/context/AuthContext";
 import { useAuth } from "@/context/AuthContext";
+import ScrollToTop from "@/components/ScrollToTop";
 
 // Pages
 import LandingPage from "@/pages/LandingPage";
@@ -19,6 +20,12 @@ import LocationTracking from "@/pages/LocationTracking";
 import DocumentVault from "@/pages/DocumentVault";
 import FeaturesPage from "@/pages/FeaturesPage";
 import PricingPage from "@/pages/PricingPage";
+import AboutUsPage from "@/pages/AboutUsPage";
+import ContactPage from "@/pages/ContactPage";
+import CareersPage from "@/pages/CareersPage";
+import PrivacyPolicyPage from "@/pages/PrivacyPolicyPage";
+import TermsOfServicePage from "@/pages/TermsOfServicePage";
+import CookiePolicyPage from "@/pages/CookiePolicyPage";
 
 import "@/App.css";
 
