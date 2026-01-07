@@ -1,0 +1,152 @@
+{
+  "identity": {
+    "name": "Kinship Journeys",
+    "persona": "E1 - The Anti-AI Designer",
+    "tone": "Adventurous, Connected, Safe, Vibrant",
+    "archetype": "Vibrant Organic (Archetype 1 + 2 Hybrid)"
+  },
+  "typography": {
+    "headings": {
+      "family": "Outfit, sans-serif",
+      "weights": ["600", "800"],
+      "usage": "Headings, Hero Text, Big Numbers"
+    },
+    "body": {
+      "family": "DM Sans, sans-serif",
+      "weights": ["400", "500", "700"],
+      "usage": "Paragraphs, UI Elements, Inputs"
+    },
+    "mono": {
+      "family": "JetBrains Mono, monospace",
+      "usage": "Code, Flight Numbers, Coordinates"
+    }
+  },
+  "colors": {
+    "primary": {
+      "DEFAULT": "#0F4C75",
+      "foreground": "#FFFFFF",
+      "description": "Deep Ocean Blue - Trust, Depth, Headers"
+    },
+    "secondary": {
+      "DEFAULT": "#FF6B35",
+      "foreground": "#FFFFFF",
+      "description": "Sunset Orange - Energy, CTAs, Highlights"
+    },
+    "accent": {
+      "DEFAULT": "#00B894",
+      "foreground": "#FFFFFF",
+      "description": "Jungle Green - Success, Eco-Impact, Map Markers"
+    },
+    "background": {
+      "DEFAULT": "#FDFBF7",
+      "description": "Warm Sand - Main App Background"
+    },
+    "surface": {
+      "DEFAULT": "#FFFFFF",
+      "description": "Card Backgrounds"
+    },
+    "muted": {
+      "DEFAULT": "#EAE8E4",
+      "foreground": "#64748B"
+    },
+    "destructive": {
+      "DEFAULT": "#EF4444",
+      "foreground": "#FFFFFF"
+    }
+  },
+  "visual_enhancers": {
+    "radius": {
+      "default": "1rem",
+      "sm": "0.5rem",
+      "lg": "1.5rem",
+      "full": "9999px"
+    },
+    "shadows": {
+      "card": "0 4px 20px -2px rgba(15, 76, 117, 0.1)",
+      "button": "0 4px 14px 0 rgba(255, 107, 53, 0.39)",
+      "float": "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)"
+    },
+    "textures": {
+      "noise": "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E\")",
+      "topography": "Subtle topographic map SVG overlay on background sections"
+    },
+    "glassmorphism": {
+      "style": "backdrop-blur-xl bg-white/70 border border-white/20 shadow-lg",
+      "usage": "Sticky Nav, Map Overlays, Floating Action Buttons"
+    }
+  },
+  "layout_strategies": {
+    "dashboard": {
+      "type": "Bento Grid",
+      "classes": "grid grid-cols-1 md:grid-cols-4 gap-6 p-6",
+      "rules": "Asymmetrical cards. Hero card spans 2 cols, 2 rows. Use 'h-full' on children."
+    },
+    "landing": {
+      "type": "Tetris Grid",
+      "classes": "grid grid-cols-1 md:grid-cols-12 gap-8",
+      "rules": "Overlap elements using negative margins. Don't fill every cell."
+    },
+    "spacing": {
+      "container_padding": "p-6 md:p-12",
+      "section_gap": "gap-16 md:gap-24"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-secondary text-white hover:bg-secondary/90 shadow-button rounded-full px-8 py-3 font-bold transition-transform hover:-translate-y-0.5",
+      "secondary": "bg-white text-primary border-2 border-primary/10 hover:border-primary/30 hover:bg-primary/5 rounded-full px-8 py-3 font-bold",
+      "ghost": "text-primary hover:bg-primary/5 rounded-full px-6 py-2"
+    },
+    "cards": {
+      "base": "bg-white rounded-2xl border border-border/40 shadow-card hover:shadow-lg transition-all duration-300",
+      "interactive": "cursor-pointer hover:-translate-y-1 hover:border-secondary/30"
+    },
+    "inputs": {
+      "base": "bg-white border-2 border-muted focus:border-primary rounded-xl px-4 py-3 outline-none transition-colors"
+    }
+  },
+  "image_urls": {
+    "hero": {
+      "url": "https://images.pexels.com/photos/697244/pexels-photo-697244.jpeg",
+      "alt": "Family hiking mountain sunset",
+      "usage": "Landing Page Hero Background"
+    },
+    "relax": {
+      "url": "https://images.pexels.com/photos/4784348/pexels-photo-4784348.jpeg",
+      "alt": "Tropical beach family vacation aerial",
+      "usage": "Relaxation/Memories Section"
+    },
+    "planning": {
+      "url": "https://images.pexels.com/photos/3811863/pexels-photo-3811863.jpeg",
+      "alt": "Group friends looking at map city street",
+      "usage": "Trip Planner / Itinerary Builder"
+    },
+    "camping": {
+      "url": "https://images.pexels.com/photos/13710182/pexels-photo-13710182.jpeg",
+      "alt": "Camping tent night stars family",
+      "usage": "Adventure/Activity Section"
+    },
+    "transit": {
+      "url": "https://images.pexels.com/photos/54380/pexels-photo-54380.jpeg",
+      "alt": "Family walking in airport with luggage",
+      "usage": "Booking/Flights Section"
+    }
+  },
+  "instructions_to_main_agent": [
+    "INSTALL FONTS: Add '@fontsource/outfit' and '@fontsource/dm-sans' to package.json immediately.",
+    "TAILWIND CONFIG: Update tailwind.config.js with the colors and border radius defined above.",
+    "GLOBAL CSS: Add the noise texture to the body background in index.css.",
+    "SHADCN: Customize all Shadcn components to use 'rounded-xl' or 'rounded-2xl' instead of default 'rounded-md'.",
+    "ICONS: Use 'lucide-react' for UI icons, but use 'phosphor-icons' (Duotone) for feature highlights if possible.",
+    "MAPS: Use 'react-map-gl' or 'leaflet' with a custom style that matches the 'Warm Sand' background (no default Google Maps look).",
+    "MOTION: Use 'framer-motion' for page transitions and staggered list entrances. No static pages.",
+    "TESTING: Add 'data-testid' to all interactive elements."
+  ],
+  "universal_guidelines": [
+    "Do not use gradients for backgrounds, use solid colors or subtle textures.",
+    "Ensure all text has sufficient contrast (APCA/WCAG AA).",
+    "Use 2-3x more padding than you think is necessary.",
+    "Never use generic 'Lorem Ipsum'. Use travel-themed placeholder text.",
+    "Mobile-first: Ensure touch targets are at least 44px."
+  ]
+}
