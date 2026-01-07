@@ -76,7 +76,6 @@ function AppRoutes() {
         <Route path="/pricing" element={<PricingPage />} />
         <Route path="/about" element={<AboutUsPage />} />
         <Route path="/contact" element={<ContactPage />} />
-        <Route path="/careers" element={<CareersPage />} />
         <Route path="/privacy" element={<PrivacyPolicyPage />} />
         <Route path="/terms" element={<TermsOfServicePage />} />
         <Route path="/cookies" element={<CookiePolicyPage />} />
