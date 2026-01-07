@@ -11,15 +11,15 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useRef } from 'react';
 
-// Premium family travel images
+// Premium family travel images - wholesome adventure themes
 const IMAGES = {
-  hero: 'https://images.pexels.com/photos/35540364/pexels-photo-35540364.jpeg',
-  adventure: 'https://images.pexels.com/photos/35503253/pexels-photo-35503253.jpeg',
-  beach: 'https://images.pexels.com/photos/35541050/pexels-photo-35541050.jpeg',
-  sunset: 'https://images.pexels.com/photos/35538139/pexels-photo-35538139.jpeg',
-  family: 'https://images.pexels.com/photos/35533806/pexels-photo-35533806.jpeg',
-  planning: 'https://images.pexels.com/photos/2305761/pexels-photo-2305761.jpeg',
-  camping: 'https://images.pexels.com/photos/34041629/pexels-photo-34041629.jpeg',
+  hero: 'https://images.pexels.com/photos/1157399/pexels-photo-1157399.jpeg',
+  adventure: 'https://images.pexels.com/photos/1469880/pexels-photo-1469880.jpeg',
+  sunset: 'https://images.pexels.com/photos/35473890/pexels-photo-35473890.jpeg',
+  family: 'https://images.pexels.com/photos/5961944/pexels-photo-5961944.jpeg',
+  planning: 'https://images.pexels.com/photos/7368182/pexels-photo-7368182.jpeg',
+  camping: 'https://images.pexels.com/photos/1687845/pexels-photo-1687845.jpeg',
+  exploration: 'https://images.pexels.com/photos/7978854/pexels-photo-7978854.jpeg',
 };
 
 const quickFeatures = [
