@@ -39,7 +39,7 @@ const heroFeatures = [
     title: "Smart Expense Splitting",
     description: "Track every expense and automatically calculate who owes who. Multiple currency support makes international family trips a breeze.",
     gradient: "from-amber-500 to-orange-600",
-    image: IMAGES.beach,
+    image: IMAGES.family,
     benefits: ['Automatic currency conversion', 'Fair split calculations', 'Receipt photo storage', 'Export to spreadsheets'],
   },
 ];
