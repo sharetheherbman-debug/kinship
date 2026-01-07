@@ -423,17 +423,16 @@ export default function LandingPage() {
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-4">
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
+            <motion.div\n              initial={{ opacity: 0, y: 40 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               className="md:col-span-2 relative rounded-3xl overflow-hidden h-[400px] group"
             >
-              <img src={IMAGES.beach} alt="Family at beach" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              <img src={IMAGES.sunset} alt="Family at sunset" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
               <div className="absolute bottom-6 left-6">
-                <span className="text-teal-400 font-semibold text-sm">Beach Paradise</span>
-                <h3 className="text-white text-2xl font-heading font-bold">Tropical Adventures</h3>
+                <span className="text-teal-400 font-semibold text-sm">Golden Moments</span>
+                <h3 className="text-white text-2xl font-heading font-bold">Sunset Adventures</h3>
               </div>
             </motion.div>
             <motion.div
@@ -443,11 +442,11 @@ export default function LandingPage() {
               transition={{ delay: 0.1 }}
               className="relative rounded-3xl overflow-hidden h-[400px] group"
             >
-              <img src={IMAGES.sunset} alt="Family sunset" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+              <img src={IMAGES.exploration} alt="Family exploration" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
               <div className="absolute bottom-6 left-6">
-                <span className="text-amber-400 font-semibold text-sm">Golden Hour</span>
-                <h3 className="text-white text-xl font-heading font-bold">Sunset Moments</h3>
+                <span className="text-amber-400 font-semibold text-sm">Discovery</span>
+                <h3 className="text-white text-xl font-heading font-bold">New Experiences</h3>
               </div>
             </motion.div>
             <motion.div
@@ -461,7 +460,7 @@ export default function LandingPage() {
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent" />
               <div className="absolute bottom-6 left-6">
                 <span className="text-rose-400 font-semibold text-sm">Family Time</span>
-                <h3 className="text-white text-xl font-heading font-bold">Reunions</h3>
+                <h3 className="text-white text-xl font-heading font-bold">Together</h3>
               </div>
             </motion.div>
             <motion.div
