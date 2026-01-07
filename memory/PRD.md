@@ -1,89 +1,58 @@
 # Kinship Journeys - Product Requirements Document
 
 ## Original Problem Statement
-Build Kinship Journeys - an all-in-one family travel planning and collaboration PWA for global families (e.g., members in South Africa collaborating with those in UK). Features: secure invite-only auth, photo galleries, collaborative trip planning, real-time chat, booking integrations, budget tracker, activity planner, family tracker, emergency hub, AI assistance, and more.
+Build Kinship Journeys - an all-in-one family travel planning and collaboration PWA for global families.
 
-## User Choices
-- **AI Provider**: OpenAI GPT-4 (user provides own API key)
-- **Authentication**: JWT-based custom auth (no Emergent dependencies)
-- **Theme**: Vibrant adventure (bold blues, oranges, greens)
-- **Payment**: Stripe (test keys configured)
-- **Deployment Target**: Webdock VPS
+## User Requirements (Updated)
+- **Color Scheme**: Teal/Cyan (#14B8A6) - fresh, travel-inspired
+- **Pricing**: R49/month ZAR (base), auto-convert to user's currency
+- **Extra Members**: R19/month per 5 additional members (beyond 10)
+- **Copyright**: 2026
+- **Branding**: No Emergent dependencies or branding
 
 ## Architecture
-- **Frontend**: React.js with Tailwind CSS, Shadcn UI components, Framer Motion
-- **Backend**: FastAPI (Python) with Socket.IO for real-time
+- **Frontend**: React.js + Tailwind CSS + Shadcn UI + Framer Motion
+- **Backend**: FastAPI (Python) + Socket.IO
 - **Database**: MongoDB
-- **Integrations**: OpenAI GPT-4, Stripe Payments, Socket.IO
+- **Integrations**: OpenAI GPT-4 (user provides key), Stripe Payments
 
 ## User Personas
 1. **Family Admin**: Creates and manages family groups, invites members
 2. **Family Member**: Collaborates on trips, uses chat, tracks budgets
-3. **Super Admin**: Manages users, families, payments via admin panel
+3. **Super Admin**: /superadmin-secret-access for management
 
-## Core Requirements (Static)
-- [x] JWT Authentication (register/login)
-- [x] Family Group Management (create/join with invite code)
-- [x] Trip Planning & Itinerary Builder
+## Core Features Implemented
+- [x] JWT Authentication with currency selection
+- [x] Multi-currency pricing (ZAR, USD, GBP, EUR, AUD)
+- [x] Family Group Management
+- [x] Trip Planning with live countdown timers
+- [x] Itinerary Builder (manual + AI generation)
 - [x] Real-time Family Chat (Socket.IO)
-- [x] Budget Tracker (multi-currency support)
+- [x] Budget Tracker with expense splitting
 - [x] Packing List Management
-- [x] AI Assistant (requires user's OpenAI API key)
+- [x] Location Tracking with consent & settings
+- [x] Document Vault with expiry alerts
+- [x] Milestone Tracker (birthdays, anniversaries)
+- [x] Weather Forecasts for destinations
+- [x] AI Assistant (requires OpenAI API key)
 - [x] Premium Subscription (Stripe)
-- [x] Hidden Admin Panel (/superadmin-secret-access)
+- [x] Hidden Admin Panel
 
-## What's Been Implemented (January 2025)
-### MVP Features
-1. **Landing Page**: Hero section, features grid, testimonials, CTA
-2. **Authentication**: Registration, login, JWT tokens
-3. **Dashboard**: Family overview, quick actions, trip cards
-4. **Family Management**: Create family, generate invite codes, join families
-5. **Trip Planner**: Create trips, set dates/budget/destination
-6. **Trip Detail**: 
-   - Itinerary tab (add/delete activities, AI generation)
-   - Packing list tab (categorized items, toggle packed)
-   - Budget tab (expense tracking, progress bar)
-7. **Real-time Chat**: Socket.IO messaging, typing indicators
-8. **AI Assistant**: Chat interface, quick prompts (requires OpenAI key)
-9. **Settings**: Profile view, invite code sharing, premium upgrade
-10. **Admin Panel**: User management, family oversight, payment tracking
+## Pricing Model
+| Currency | Base (10 members) | Extra (per 5) |
+|----------|-------------------|---------------|
+| ZAR      | R49               | R19           |
+| USD      | $2.50             | $1.00         |
+| GBP      | £2.00             | £0.80         |
+| EUR      | €2.50             | €1.00         |
+| AUD      | A$4.00            | A$1.50        |
 
-### Tech Stack
-- React + Tailwind CSS + Shadcn UI
-- FastAPI + Socket.IO
-- MongoDB
-- Stripe Checkout
-- OpenAI GPT-4 integration (ready for API key)
-
-## Prioritized Backlog
-### P0 (Critical)
-- [ ] User provides OpenAI API key for AI features
-
-### P1 (High Priority)
-- [ ] Photo gallery with upload functionality
-- [ ] Location tracker with consent system
-- [ ] Push notifications (PWA service worker)
-- [ ] Offline support for itineraries
-
-### P2 (Medium Priority)
-- [ ] Booking search integration (flights/hotels)
-- [ ] Emergency hub with SOS contacts
-- [ ] Multi-timezone support
-- [ ] Currency converter
-
-### P3 (Nice to Have)
-- [ ] AR/VR destination previews
-- [ ] Gamified challenges with points
-- [ ] Eco-impact carbon tracking
-- [ ] Smart home prep (IFTTT)
+## Setup Required
+1. Add OpenAI API key: `/app/backend/.env` → `OPENAI_API_KEY=your-key`
+2. Stripe is pre-configured with test keys
 
 ## Next Tasks
-1. Add OpenAI API key configuration in settings
-2. Implement photo gallery with cloud storage
-3. Add PWA service worker for offline support
-4. Implement location sharing with consent
-5. Add booking search APIs
-
-## API Keys Required
-- `OPENAI_API_KEY`: User must provide for AI features
-- `STRIPE_API_KEY`: Already configured (sk_test_emergent)
+1. Photo gallery with cloud storage
+2. PWA service worker for offline support
+3. Push notifications
+4. Booking search integrations (flights/hotels)
