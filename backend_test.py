@@ -502,6 +502,7 @@ class KinshipJourneysAPITester:
         
         # Run test suites in order
         self.test_health_check()
+        self.test_pricing_and_currency()
         
         if self.test_auth_flow():
             self.test_family_management()
@@ -509,6 +510,10 @@ class KinshipJourneysAPITester:
             self.test_itinerary_management()
             self.test_packing_list()
             self.test_budget_management()
+            self.test_location_tracking()
+            self.test_document_vault()
+            self.test_milestones()
+            self.test_weather_api()
             self.test_chat_functionality()
             self.test_ai_functionality()
             self.test_admin_functionality()
