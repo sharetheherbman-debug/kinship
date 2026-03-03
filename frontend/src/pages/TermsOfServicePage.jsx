@@ -33,7 +33,7 @@ export default function TermsOfServicePage() {
             <div className="prose prose-invert prose-lg max-w-none">
               <div className="bg-white/5 border border-white/10 rounded-2xl p-8 mb-8">
                 <p className="text-slate-300 leading-relaxed">
-                  Welcome to Kinship Journeys. By using our service, you agree to these terms. Please read them carefully.
+                  Welcome to Amarktai Network. By using our service, you agree to these terms. Please read them carefully.
                 </p>
               </div>
 
@@ -41,14 +41,14 @@ export default function TermsOfServicePage() {
                 <section>
                   <h2 className="font-heading text-2xl font-bold text-white mb-4">1. Acceptance of Terms</h2>
                   <p>
-                    By accessing or using Kinship Journeys, you agree to be bound by these Terms of Service and our Privacy Policy. If you don't agree, please don't use our service.
+                    By accessing or using Amarktai Network, you agree to be bound by these Terms of Service and our Privacy Policy. If you don't agree, please don't use our service.
                   </p>
                 </section>
 
                 <section>
                   <h2 className="font-heading text-2xl font-bold text-white mb-4">2. Description of Service</h2>
                   <p className="mb-4">
-                    Kinship Journeys is a family travel planning platform that provides:
+                    Amarktai Network is a family travel planning platform that provides:
                   </p>
                   <ul className="list-disc list-inside space-y-2 ml-4">
                     <li>Trip planning and itinerary creation tools</li>
@@ -62,7 +62,7 @@ export default function TermsOfServicePage() {
 
                 <section>
                   <h2 className="font-heading text-2xl font-bold text-white mb-4">3. Account Registration</h2>
-                  <p className="mb-4">To use Kinship Journeys, you must:</p>
+                  <p className="mb-4">To use Amarktai Network, you must:</p>
                   <ul className="list-disc list-inside space-y-2 ml-4">
                     <li>Be at least 18 years old</li>
                     <li>Provide accurate and complete registration information</li>
@@ -127,7 +127,7 @@ export default function TermsOfServicePage() {
                 <section>
                   <h2 className="font-heading text-2xl font-bold text-white mb-4">9. Limitation of Liability</h2>
                   <p>
-                    To the maximum extent permitted by law, Kinship Journeys shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the service.
+                    To the maximum extent permitted by law, Amarktai Network shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of the service.
                   </p>
                 </section>
 
@@ -151,7 +151,7 @@ export default function TermsOfServicePage() {
                     Questions about these terms? Contact us at:
                   </p>
                   <p className="mt-4">
-                    <strong className="text-white">Email:</strong> legal@kinshipjourneys.com<br />
+                    <strong className="text-white">Email:</strong> legal@amarktainetwork.com<br />
                     <strong className="text-white">Address:</strong> Cape Town, South Africa
                   </p>
                 </section>

@@ -154,7 +154,7 @@ export default function AuthPage() {
             <div className="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center">
               <Globe className="w-6 h-6 text-white" />
             </div>
-            <span className="font-heading font-bold text-xl text-primary">Kinship Journeys</span>
+            <span className="font-heading font-bold text-xl text-primary">Amarktai Network</span>
           </Link>
 
           <Tabs defaultValue="login" className="w-full">

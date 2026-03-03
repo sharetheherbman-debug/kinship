@@ -506,7 +506,7 @@ function Navbar({ user, onLogout }) {
             <div className="w-9 h-9 md:w-10 md:h-10 bg-secondary rounded-xl flex items-center justify-center">
               <Globe className="w-5 h-5 md:w-6 md:h-6 text-white" />
             </div>
-            <span className="font-heading font-bold text-lg md:text-xl text-primary hidden sm:block">Kinship Journeys</span>
+            <span className="font-heading font-bold text-lg md:text-xl text-primary hidden sm:block">Amarktai Network</span>
           </Link>
 
           <div className="flex items-center gap-2 md:gap-4">

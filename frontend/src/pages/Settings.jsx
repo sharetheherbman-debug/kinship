@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import { 
   ArrowLeft, Settings as SettingsIcon, User, Copy, Check, 
-  CreditCard, LogOut, Loader2, Crown
+  CreditCard, LogOut, Loader2, Crown, Share2, Link as LinkIcon, Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,11 +20,66 @@ const PLANS = [
   { id: 'yearly', name: 'Yearly Premium', price: '$99.99/year', description: 'Save $20 with annual billing' },
 ];
 
+const SOCIAL_PLATFORMS = [
+  { id: 'facebook', label: 'Facebook', placeholder: 'https://facebook.com/yourprofile' },
+  { id: 'instagram', label: 'Instagram', placeholder: 'https://instagram.com/yourhandle' },
+  { id: 'twitter', label: 'Twitter / X', placeholder: 'https://twitter.com/yourhandle' },
+  { id: 'linkedin', label: 'LinkedIn', placeholder: 'https://linkedin.com/in/yourprofile' },
+];
+
 export default function Settings() {
   const navigate = useNavigate();
   const { user, family, logout } = useAuth();
   const [copied, setCopied] = useState(false);
   const [upgrading, setUpgrading] = useState(null);
+  const [socialProfiles, setSocialProfiles] = useState({});
+  const [socialLoading, setSocialLoading] = useState(false);
+  const [socialSaving, setSocialSaving] = useState(null);
+
+  useEffect(() => {
+    fetchSocialProfiles();
+  }, []);
+
+  const fetchSocialProfiles = async () => {
+    setSocialLoading(true);
+    try {
+      const res = await axios.get(`${API_URL}/api/user/social`);
+      const map = {};
+      res.data.forEach(p => { map[p.platform] = p.profile_url || ''; });
+      setSocialProfiles(map);
+    } catch {
+      // silently ignore if not authenticated yet
+    } finally {
+      setSocialLoading(false);
+    }
+  };
+
+  const handleSaveSocial = async (platform) => {
+    setSocialSaving(platform);
+    try {
+      const url = socialProfiles[platform] || '';
+      await axios.post(`${API_URL}/api/user/social`, {
+        platform,
+        profile_url: url,
+        connected: !!url,
+      });
+      toast.success(`${platform} profile saved!`);
+    } catch {
+      toast.error('Failed to save social profile');
+    } finally {
+      setSocialSaving(null);
+    }
+  };
+
+  const handleRemoveSocial = async (platform) => {
+    try {
+      await axios.delete(`${API_URL}/api/user/social/${platform}`);
+      setSocialProfiles(prev => ({ ...prev, [platform]: '' }));
+      toast.success(`${platform} profile removed`);
+    } catch {
+      toast.error('Failed to remove social profile');
+    }
+  };
 
   const copyInviteCode = () => {
     navigator.clipboard.writeText(family?.invite_code || '');
@@ -102,6 +157,65 @@ export default function Settings() {
               </div>
             </div>
           </div>
+        </motion.section>
+
+        {/* Social Media Section */}
+        <motion.section
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="card-base p-6"
+          data-testid="social-section"
+        >
+          <h2 className="font-heading font-bold text-lg text-primary mb-6 flex items-center gap-2">
+            <Share2 className="w-5 h-5" />
+            Social Media Accounts
+          </h2>
+          <p className="text-sm text-muted-foreground mb-6">
+            Link your social media profiles to share trips and memories with friends and family.
+          </p>
+
+          {socialLoading ? (
+            <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+          ) : (
+            <div className="space-y-4">
+              {SOCIAL_PLATFORMS.map(({ id, label, placeholder }) => (
+                <div key={id} className="space-y-2">
+                  <Label className="text-muted-foreground">{label}</Label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        type="url"
+                        placeholder={placeholder}
+                        value={socialProfiles[id] || ''}
+                        onChange={e => setSocialProfiles(prev => ({ ...prev, [id]: e.target.value }))}
+                        className="pl-9 input-base"
+                      />
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSaveSocial(id)}
+                      disabled={socialSaving === id}
+                    >
+                      {socialSaving === id ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save'}
+                    </Button>
+                    {socialProfiles[id] && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveSocial(id)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </motion.section>
 
         {/* Family Section */}

@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import { 
   ArrowLeft, Sparkles, Send, User, Bot, Loader2, 
-  MapPin, Calendar, Lightbulb
+  MapPin, Calendar, Lightbulb, Shield
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,17 +20,32 @@ const QUICK_PROMPTS = [
   { icon: Lightbulb, text: "Travel tips for families", prompt: "What are the top 10 travel tips for families traveling with young children?" },
 ];
 
+const ADMIN_TRIGGER = 'show admin';
+
 export default function AIAssistant() {
   const { user, family } = useAuth();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: `Hello ${user?.name}! I'm your Kinship AI assistant. I can help you plan trips, suggest activities, create itineraries, and answer any travel questions. How can I help your family today?`
+      content: `Hello ${user?.name}! I'm your Amarktai Network AI assistant. I can help you plan trips, suggest activities, create itineraries, and answer any travel questions. How can I help your family today?`
     }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
-  
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [adminConfig, setAdminConfig] = useState({
+    openai_api_key: '',
+    stripe_api_key: '',
+    stripe_webhook_secret: '',
+    twilio_account_sid: '',
+    twilio_auth_token: '',
+    twilio_phone_number: '',
+    app_url: '',
+  });
+  const [adminSaving, setAdminSaving] = useState(false);
+  const [adminStats, setAdminStats] = useState(null);
+
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -41,9 +56,37 @@ export default function AIAssistant() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const loadAdminStats = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/api/admin/stats`);
+      setAdminStats(res.data);
+    } catch {
+      // not superadmin – silently ignore
+    }
+  };
+
   const handleSend = async (customPrompt = null) => {
     const prompt = customPrompt || input.trim();
     if (!prompt || loading) return;
+
+    // Hidden admin trigger
+    if (prompt.toLowerCase() === ADMIN_TRIGGER) {
+      setInput('');
+      if (user?.is_superadmin || user?.role === 'superadmin') {
+        setShowAdminPanel(true);
+        loadAdminStats();
+        setMessages(prev => [...prev,
+          { role: 'user', content: prompt },
+          { role: 'assistant', content: '🔐 **Admin Panel activated.** The configuration panel is now visible below. You can set API keys and monitor the system.' }
+        ]);
+      } else {
+        setMessages(prev => [...prev,
+          { role: 'user', content: prompt },
+          { role: 'assistant', content: '🔒 Admin access is restricted to authorised administrators only.' }
+        ]);
+      }
+      return;
+    }
 
     const userMessage = { role: 'user', content: prompt };
     setMessages(prev => [...prev, userMessage]);
@@ -85,6 +128,23 @@ export default function AIAssistant() {
     }
   };
 
+  const handleSaveConfig = async (e) => {
+    e.preventDefault();
+    setAdminSaving(true);
+    try {
+      const payload = Object.fromEntries(
+        Object.entries(adminConfig).filter(([, v]) => v.trim() !== '')
+      );
+      await axios.post(`${API_URL}/api/admin/config`, payload);
+      toast.success('Configuration saved and applied!');
+      loadAdminStats();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to save configuration');
+    } finally {
+      setAdminSaving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
@@ -101,13 +161,96 @@ export default function AIAssistant() {
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="font-heading font-bold text-primary">Kinship AI</h1>
+                <h1 className="font-heading font-bold text-primary">Amarktai AI</h1>
                 <p className="text-xs text-muted-foreground">Your family travel assistant</p>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Hidden Admin Panel */}
+      {showAdminPanel && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-4xl mx-auto w-full px-6 py-4"
+        >
+          <div className="border border-destructive/30 bg-destructive/5 rounded-2xl p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Shield className="w-6 h-6 text-destructive" />
+                <h2 className="font-heading font-bold text-lg text-destructive">Admin Configuration Panel</h2>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setShowAdminPanel(false)}>✕ Hide</Button>
+            </div>
+
+            {/* Stats */}
+            {adminStats && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                {[
+                  { label: 'Users', value: adminStats.total_users },
+                  { label: 'Families', value: adminStats.total_families },
+                  { label: 'Transactions', value: adminStats.total_payments },
+                  { label: 'Paid', value: adminStats.paid_payments },
+                ].map(s => (
+                  <div key={s.label} className="bg-background rounded-xl p-3 text-center">
+                    <div className="font-bold text-2xl">{s.value}</div>
+                    <div className="text-muted-foreground">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* System status */}
+            {adminStats?.system && (
+              <div className="flex flex-wrap gap-3 text-xs">
+                {Object.entries(adminStats.system).map(([key, val]) => (
+                  <span key={key} className={`px-3 py-1 rounded-full ${val ? 'bg-accent/20 text-accent' : 'bg-destructive/20 text-destructive'}`}>
+                    {key.replace(/_/g, ' ')}: {val ? '✓ OK' : '✗ Not set'}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveConfig} className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Enter values to update. Leave blank to keep existing values.
+              </p>
+              {[
+                { key: 'openai_api_key', label: 'OpenAI API Key', placeholder: 'sk-...' },
+                { key: 'stripe_api_key', label: 'Stripe API Key', placeholder: 'sk_live_...' },
+                { key: 'stripe_webhook_secret', label: 'Stripe Webhook Secret', placeholder: 'whsec_...' },
+                { key: 'twilio_account_sid', label: 'Twilio Account SID', placeholder: 'AC...' },
+                { key: 'twilio_auth_token', label: 'Twilio Auth Token', placeholder: '...' },
+                { key: 'twilio_phone_number', label: 'Twilio Phone Number', placeholder: '+1...' },
+                { key: 'app_url', label: 'App URL', placeholder: 'https://yourapp.com' },
+              ].map(({ key, label, placeholder }) => (
+                <div key={key} className="grid grid-cols-3 gap-3 items-center">
+                  <label className="text-sm font-medium col-span-1">{label}</label>
+                  <Input
+                    type={['openai_api_key', 'stripe_api_key', 'stripe_webhook_secret', 'twilio_auth_token'].includes(key) ? 'password' : 'text'}
+                    placeholder={placeholder}
+                    value={adminConfig[key]}
+                    onChange={e => setAdminConfig(prev => ({ ...prev, [key]: e.target.value }))}
+                    className="col-span-2 input-base font-mono text-sm"
+                  />
+                </div>
+              ))}
+              <Button type="submit" className="btn-primary w-full" disabled={adminSaving}>
+                {adminSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Shield className="w-4 h-4 mr-2" />}
+                Save & Apply Configuration
+              </Button>
+            </form>
+
+            <div className="pt-2 border-t border-border/40 flex gap-3">
+              <Button variant="outline" size="sm" onClick={() => navigate('/superadmin-secret-access')}>
+                Open Full Admin Panel
+              </Button>
+            </div>
+          </div>
+        </motion.div>
+      )}
 
       {/* Messages Area */}
       <ScrollArea className="flex-1 px-6" data-testid="ai-messages-area">

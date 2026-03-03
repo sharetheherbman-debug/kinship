@@ -26,7 +26,7 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # JWT Config
-JWT_SECRET = os.environ.get('JWT_SECRET', 'kinship-journeys-secret-key-2024')
+JWT_SECRET = os.environ.get('JWT_SECRET', 'amarktai-network-secret-key-2024')
 JWT_ALGORITHM = 'HS256'
 JWT_EXPIRATION_HOURS = 72
 
@@ -47,7 +47,7 @@ logger = logging.getLogger(__name__)
 
 # Socket.IO server
 sio = socketio.AsyncServer(async_mode='asgi', cors_allowed_origins='*')
-fastapi_app = FastAPI(title="Kinship Journeys API")
+fastapi_app = FastAPI(title="Amarktai Network API")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -896,7 +896,7 @@ async def send_tracking_sms(phone_number: str, approval_link: str, family_name: 
         twilio_client = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
         message = twilio_client.messages.create(
             body=(
-                f"Hi! {inviter_name} from the '{family_name}' family on Kinship Journeys "
+                f"Hi! {inviter_name} from the '{family_name}' family on Amarktai Network "
                 f"would like to track your location. "
                 f"Tap the link to approve: {approval_link} "
                 f"(You can stop sharing at any time.)"
@@ -1172,7 +1172,7 @@ async def ai_chat(data: AIRequest, user: dict = Depends(get_current_user)):
     if not OPENAI_API_KEY:
         raise HTTPException(status_code=500, detail="OpenAI API key not configured")
     
-    system_prompt = """You are Kinship AI, a friendly family travel assistant for the Kinship Journeys app. 
+    system_prompt = """You are Amarktai AI, a friendly family travel assistant for the Amarktai Network app. 
     Help families plan trips, suggest activities, create itineraries, recommend destinations, and provide travel tips.
     Be warm, helpful, and considerate of family dynamics. Consider kids, elders, and different preferences.
     Keep responses concise but informative."""
@@ -1291,30 +1291,50 @@ async def create_checkout(data: CheckoutRequest, user: dict = Depends(get_curren
     price = convert_price(BASE_PRICE_ZAR, data.currency)
     
     try:
-        from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
-        
         success_url = f"{data.origin_url}/payment/success?session_id={{CHECKOUT_SESSION_ID}}"
         cancel_url = f"{data.origin_url}/payment/cancel"
-        
-        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=f"{data.origin_url}/api/webhook/stripe")
-        
-        checkout_request = CheckoutSessionRequest(
-            amount=float(price),
-            currency=data.currency.lower(),
-            success_url=success_url,
-            cancel_url=cancel_url,
-            metadata={
-                'user_id': user['id'],
-                'plan': data.plan,
-                'original_currency': data.currency
-            }
-        )
-        
-        session = await stripe_checkout.create_checkout_session(checkout_request)
-        
+
+        # Stripe zero-decimal currencies must not be multiplied by 100
+        ZERO_DECIMAL_CURRENCIES = {'bif', 'clp', 'gnf', 'jpy', 'kmf', 'krw', 'mga', 'pyg',
+                                    'rwf', 'ugx', 'vnd', 'vuv', 'xaf', 'xof', 'xpf'}
+        currency_lower = data.currency.lower()
+        if currency_lower in ZERO_DECIMAL_CURRENCIES:
+            unit_amount = int(round(float(price)))
+        else:
+            unit_amount = int(round(float(price) * 100))
+        plan_name = "Amarktai Network Premium"
+
+        form_data = {
+            "mode": "payment",
+            "success_url": success_url,
+            "cancel_url": cancel_url,
+            "line_items[0][price_data][currency]": currency_lower,
+            "line_items[0][price_data][unit_amount]": str(unit_amount),
+            "line_items[0][price_data][product_data][name]": plan_name,
+            "line_items[0][quantity]": "1",
+            "metadata[user_id]": user['id'],
+            "metadata[plan]": data.plan,
+            "metadata[original_currency]": data.currency,
+        }
+
+        async with httpx.AsyncClient() as client_http:
+            resp = await client_http.post(
+                "https://api.stripe.com/v1/checkout/sessions",
+                data=form_data,
+                auth=(STRIPE_API_KEY, ""),
+                timeout=30,
+            )
+        try:
+            resp_json = resp.json()
+        except Exception:
+            raise HTTPException(status_code=500, detail="Invalid response from payment provider")
+        if resp.status_code != 200:
+            raise HTTPException(status_code=500, detail=resp_json.get("error", {}).get("message", "Stripe error"))
+        session = resp_json
+
         await db.payment_transactions.insert_one({
             'id': str(uuid.uuid4()),
-            'session_id': session.session_id,
+            'session_id': session['id'],
             'user_id': user['id'],
             'amount': price,
             'currency': data.currency,
@@ -1322,11 +1342,11 @@ async def create_checkout(data: CheckoutRequest, user: dict = Depends(get_curren
             'status': 'pending',
             'created_at': datetime.now(timezone.utc).isoformat()
         })
-        
-        return {'url': session.url, 'session_id': session.session_id}
-        
-    except ImportError:
-        raise HTTPException(status_code=500, detail="Payment integration not available")
+
+        return {'url': session['url'], 'session_id': session['id']}
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Checkout error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1334,24 +1354,35 @@ async def create_checkout(data: CheckoutRequest, user: dict = Depends(get_curren
 @api_router.get("/payments/status/{session_id}")
 async def get_payment_status(session_id: str, user: dict = Depends(get_current_user)):
     try:
-        from emergentintegrations.payments.stripe.checkout import StripeCheckout
-        
-        stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
-        status = await stripe_checkout.get_checkout_status(session_id)
-        
+        async with httpx.AsyncClient() as client_http:
+            resp = await client_http.get(
+                f"https://api.stripe.com/v1/checkout/sessions/{session_id}",
+                auth=(STRIPE_API_KEY, ""),
+                timeout=30,
+            )
+        try:
+            resp_json = resp.json()
+        except Exception:
+            raise HTTPException(status_code=500, detail="Invalid response from payment provider")
+        if resp.status_code != 200:
+            raise HTTPException(status_code=500, detail=resp_json.get("error", {}).get("message", "Stripe error"))
+        session = resp_json
+
+        payment_status = session.get('payment_status', 'unpaid')
+
         await db.payment_transactions.update_one(
             {'session_id': session_id},
-            {'$set': {'status': status.payment_status, 'updated_at': datetime.now(timezone.utc).isoformat()}}
+            {'$set': {'status': payment_status, 'updated_at': datetime.now(timezone.utc).isoformat()}}
         )
-        
+
         return {
-            'status': status.status,
-            'payment_status': status.payment_status,
-            'amount': status.amount_total / 100,
-            'currency': status.currency
+            'status': session.get('status'),
+            'payment_status': payment_status,
+            'amount': session.get('amount_total', 0) / 100,
+            'currency': session.get('currency')
         }
-    except ImportError:
-        raise HTTPException(status_code=500, detail="Payment integration not available")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Payment status error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -1444,7 +1475,7 @@ async def stripe_webhook(request: Request):
 # ADMIN ROUTES
 # =============================================================================
 
-ADMIN_SECRET = os.environ.get('ADMIN_SECRET', 'kinship-admin-2024')
+ADMIN_SECRET = os.environ.get('ADMIN_SECRET', 'amarktai-admin-2024')
 
 async def verify_admin(credentials: HTTPAuthorizationCredentials = Depends(security)):
     user = await get_current_user(credentials)
@@ -1472,15 +1503,15 @@ async def setup_admin(secret: str):
     if secret != ADMIN_SECRET:
         raise HTTPException(status_code=403, detail="Invalid admin secret")
     
-    admin = await db.users.find_one({'email': 'admin@kinship.app'})
+    admin = await db.users.find_one({'email': 'admin@amarktainetwork.com'})
     if admin:
         return {'message': 'Admin already exists'}
     
     admin_id = str(uuid.uuid4())
     admin_user = {
         'id': admin_id,
-        'email': 'admin@kinship.app',
-        'password': hash_password('KinshipAdmin2024!'),
+        'email': 'admin@amarktainetwork.com',
+        'password': hash_password('AmarktaiAdmin2024!'),
         'name': 'Super Admin',
         'family_id': None,
         'role': 'superadmin',
@@ -1491,11 +1522,133 @@ async def setup_admin(secret: str):
     }
     await db.users.insert_one(admin_user)
     
-    return {'message': 'Admin created', 'email': 'admin@kinship.app', 'password': 'KinshipAdmin2024!'}
+    return {'message': 'Admin created', 'email': 'admin@amarktainetwork.com', 'password': 'AmarktaiAdmin2024!'}
+
 
 # =============================================================================
-# SOCKET.IO EVENTS
+# ADMIN CONFIG ROUTES (API key management for superadmin)
 # =============================================================================
+
+class AdminConfig(BaseModel):
+    openai_api_key: Optional[str] = None
+    stripe_api_key: Optional[str] = None
+    stripe_webhook_secret: Optional[str] = None
+    twilio_account_sid: Optional[str] = None
+    twilio_auth_token: Optional[str] = None
+    twilio_phone_number: Optional[str] = None
+    app_url: Optional[str] = None
+
+@api_router.get("/admin/config")
+async def get_admin_config(user: dict = Depends(verify_admin)):
+    """Get current runtime configuration (masked secrets)"""
+    config = await db.admin_config.find_one({'_id': 'main'}, {'_id': 0})
+    if not config:
+        config = {}
+    # Mask secret values - always use fixed mask regardless of length
+    masked = {}
+    SENSITIVE_KEYS = {'openai_api_key', 'stripe_api_key', 'stripe_webhook_secret', 'twilio_auth_token'}
+    for k, v in config.items():
+        if v and k in SENSITIVE_KEYS:
+            masked[k] = '••••••••••••'
+        else:
+            masked[k] = v
+    return masked
+
+@api_router.post("/admin/config")
+async def save_admin_config(config: AdminConfig, user: dict = Depends(verify_admin)):
+    """Save runtime configuration (updates environment variables in memory)"""
+    global OPENAI_API_KEY, STRIPE_API_KEY, STRIPE_WEBHOOK_SECRET
+    global TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, APP_URL
+
+    update_doc = {k: v for k, v in config.dict().items() if v is not None}
+    if not update_doc:
+        raise HTTPException(status_code=400, detail="No values provided")
+
+    await db.admin_config.update_one({'_id': 'main'}, {'$set': update_doc}, upsert=True)
+
+    # Apply in-memory so they take effect without restart
+    if config.openai_api_key:
+        OPENAI_API_KEY = config.openai_api_key
+        os.environ['OPENAI_API_KEY'] = config.openai_api_key
+    if config.stripe_api_key:
+        STRIPE_API_KEY = config.stripe_api_key
+        os.environ['STRIPE_API_KEY'] = config.stripe_api_key
+    if config.stripe_webhook_secret:
+        STRIPE_WEBHOOK_SECRET = config.stripe_webhook_secret
+        os.environ['STRIPE_WEBHOOK_SECRET'] = config.stripe_webhook_secret
+    if config.twilio_account_sid:
+        TWILIO_ACCOUNT_SID = config.twilio_account_sid
+        os.environ['TWILIO_ACCOUNT_SID'] = config.twilio_account_sid
+    if config.twilio_auth_token:
+        TWILIO_AUTH_TOKEN = config.twilio_auth_token
+        os.environ['TWILIO_AUTH_TOKEN'] = config.twilio_auth_token
+    if config.twilio_phone_number:
+        TWILIO_PHONE_NUMBER = config.twilio_phone_number
+        os.environ['TWILIO_PHONE_NUMBER'] = config.twilio_phone_number
+    if config.app_url:
+        APP_URL = config.app_url
+        os.environ['APP_URL'] = config.app_url
+
+    return {'message': 'Configuration saved and applied'}
+
+@api_router.get("/admin/stats")
+async def get_admin_stats(user: dict = Depends(verify_admin)):
+    """Return system stats for monitoring"""
+    total_users = await db.users.count_documents({})
+    total_families = await db.families.count_documents({})
+    total_payments = await db.payment_transactions.count_documents({})
+    paid_payments = await db.payment_transactions.count_documents({'status': 'paid'})
+    return {
+        'total_users': total_users,
+        'total_families': total_families,
+        'total_payments': total_payments,
+        'paid_payments': paid_payments,
+        'system': {
+            'openai_configured': bool(OPENAI_API_KEY),
+            'stripe_configured': bool(STRIPE_API_KEY),
+            'twilio_configured': bool(TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN),
+        }
+    }
+
+
+# =============================================================================
+# SOCIAL MEDIA PROFILE ROUTES
+# =============================================================================
+
+class SocialProfile(BaseModel):
+    platform: str  # facebook, instagram, twitter, linkedin
+    profile_url: Optional[str] = None
+    username: Optional[str] = None
+    connected: Optional[bool] = False
+
+@api_router.get("/user/social")
+async def get_social_profiles(user: dict = Depends(get_current_user)):
+    """Get user's linked social media profiles"""
+    profiles = await db.social_profiles.find({'user_id': user['id']}, {'_id': 0}).to_list(100)
+    return profiles
+
+@api_router.post("/user/social")
+async def save_social_profile(profile: SocialProfile, user: dict = Depends(get_current_user)):
+    """Save or update a social media profile link"""
+    await db.social_profiles.update_one(
+        {'user_id': user['id'], 'platform': profile.platform},
+        {'$set': {
+            'user_id': user['id'],
+            'platform': profile.platform,
+            'profile_url': profile.profile_url,
+            'username': profile.username,
+            'connected': profile.connected,
+            'updated_at': datetime.now(timezone.utc).isoformat()
+        }},
+        upsert=True
+    )
+    return {'message': f'{profile.platform} profile saved'}
+
+@api_router.delete("/user/social/{platform}")
+async def delete_social_profile(platform: str, user: dict = Depends(get_current_user)):
+    """Remove a social media profile link"""
+    await db.social_profiles.delete_one({'user_id': user['id'], 'platform': platform})
+    return {'message': f'{platform} profile removed'}
 
 @sio.event
 async def connect(sid, environ):
@@ -1533,7 +1686,7 @@ async def typing(sid, data):
 
 @api_router.get("/")
 async def root():
-    return {"message": "Kinship Journeys API", "version": "2.0.0"}
+    return {"message": "Amarktai Network API", "version": "2.0.0"}
 
 @api_router.get("/health")
 async def health():

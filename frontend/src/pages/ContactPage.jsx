@@ -15,7 +15,7 @@ const contactInfo = [
   {
     icon: Mail,
     title: 'Email Us',
-    details: 'hello@kinshipjourneys.com',
+    details: 'hello@amarktainetwork.com',
     subtext: 'We respond within 24 hours',
     gradient: 'from-teal-500 to-cyan-600',
   },
@@ -37,7 +37,7 @@ const contactInfo = [
 
 const faqs = [
   { q: 'How do I reset my password?', a: 'Click "Forgot Password" on the login page, enter your email, and follow the link we send you.' },
-  { q: 'Can I use Kinship offline?', a: 'Yes! Core features like viewing trips and documents work offline. Changes sync when you reconnect.' },
+  { q: 'Can I use this app offline?', a: 'Yes! Core features like viewing trips and documents work offline. Changes sync when you reconnect.' },
   { q: 'How do I invite family members?', a: 'Go to your family settings and share the unique invite code. They can join from the app or website.' },
   { q: 'Is my data secure?', a: 'Absolutely. We use bank-level encryption and never sell your data. You control all privacy settings.' },
 ];

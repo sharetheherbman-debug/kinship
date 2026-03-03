@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Globe, Mail, MapPin, Phone, ArrowRight, Heart } from 'lucide-react';
+import { Globe, Mail, MapPin, Phone, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Footer() {
@@ -60,15 +60,15 @@ export default function Footer() {
               <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg shadow-teal-500/30">
                 <Globe className="w-7 h-7 text-white" />
               </div>
-              <span className="font-heading font-bold text-xl">Kinship Journeys</span>
+              <span className="font-heading font-bold text-xl">Amarktai Network</span>
             </Link>
             <p className="text-slate-400 leading-relaxed mb-6 max-w-sm">
               Bringing families together through unforgettable travel adventures. Plan, share, and create memories that last a lifetime.
             </p>
             <div className="space-y-3 text-sm">
-              <a href="mailto:hello@kinshipjourneys.com" className="flex items-center gap-3 text-slate-400 hover:text-teal-400 transition-colors">
+              <a href="mailto:hello@amarktainetwork.com" className="flex items-center gap-3 text-slate-400 hover:text-teal-400 transition-colors">
                 <Mail className="w-5 h-5" />
-                hello@kinshipjourneys.com
+                hello@amarktainetwork.com
               </a>
               <div className="flex items-center gap-3 text-slate-400">
                 <MapPin className="w-5 h-5" />
@@ -123,7 +123,7 @@ export default function Footer() {
         {/* Bottom */}
         <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-slate-500 text-sm flex items-center gap-1">
-            © {currentYear} Kinship Journeys. Made with <Heart className="w-4 h-4 text-rose-500 fill-rose-500" /> for families everywhere.
+            © {currentYear} Amarktai Network. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
             <a href="#" className="text-slate-400 hover:text-teal-400 transition-colors" aria-label="Twitter">

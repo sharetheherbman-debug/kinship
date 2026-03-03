@@ -202,7 +202,7 @@ export default function PhoneTrackingApproval() {
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          Kinship Journeys · Your privacy is protected · Consent-based tracking only
+          Amarktai Network · Your privacy is protected · Consent-based tracking only
         </p>
       </motion.div>
     </div>

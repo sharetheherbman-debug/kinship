@@ -33,7 +33,7 @@ export default function PrivacyPolicyPage() {
             <div className="prose prose-invert prose-lg max-w-none">
               <div className="bg-white/5 border border-white/10 rounded-2xl p-8 mb-8">
                 <p className="text-slate-300 leading-relaxed">
-                  At Kinship Journeys, we take your privacy seriously. This policy explains how we collect, use, and protect your personal information when you use our family travel planning platform.
+                  At Amarktai Network, we take your privacy seriously. This policy explains how we collect, use, and protect your personal information when you use our family travel planning platform.
                 </p>
               </div>
 
@@ -125,7 +125,7 @@ export default function PrivacyPolicyPage() {
                 <section>
                   <h2 className="font-heading text-2xl font-bold text-white mb-4">8. Children's Privacy</h2>
                   <p>
-                    Kinship Journeys is designed for families, but accounts must be created by adults (18+). Children's information is managed by adult family members and protected by the same security measures.
+                    Amarktai Network is designed for families, but accounts must be created by adults (18+). Children's information is managed by adult family members and protected by the same security measures.
                   </p>
                 </section>
 
@@ -135,7 +135,7 @@ export default function PrivacyPolicyPage() {
                     For privacy-related questions or to exercise your rights, contact us at:
                   </p>
                   <p className="mt-4">
-                    <strong className="text-white">Email:</strong> privacy@kinshipjourneys.com<br />
+                    <strong className="text-white">Email:</strong> privacy@amarktainetwork.com<br />
                     <strong className="text-white">Address:</strong> Cape Town, South Africa
                   </p>
                 </section>
