@@ -4,11 +4,13 @@ import { motion } from 'framer-motion';
 import axios from 'axios';
 import { 
   ArrowLeft, Map, MapPin, Navigation, Battery, Clock,
-  Shield, Bell, Settings, Loader2, RefreshCw, Users
+  Shield, Bell, Settings, Loader2, RefreshCw, Users,
+  Phone, Send, Trash2, CheckCircle, XCircle, AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useAuth } from '@/context/AuthContext';
@@ -27,6 +29,12 @@ export default function LocationTracking() {
   const [updating, setUpdating] = useState(false);
   const [watchId, setWatchId] = useState(null);
 
+  // Phone tracking state
+  const [phoneTrackers, setPhoneTrackers] = useState([]);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [memberName, setMemberName] = useState('');
+  const [sendingInvite, setSendingInvite] = useState(false);
+
   useEffect(() => {
     if (family) {
       fetchData();
@@ -41,13 +49,15 @@ export default function LocationTracking() {
 
   const fetchData = async () => {
     try {
-      const [locRes, settingsRes] = await Promise.all([
+      const [locRes, settingsRes, phoneRes] = await Promise.all([
         axios.get(`${API_URL}/api/tracking/family/${family.id}`),
-        axios.get(`${API_URL}/api/tracking/settings`)
+        axios.get(`${API_URL}/api/tracking/settings`),
+        axios.get(`${API_URL}/api/tracking/phones/${family.id}`)
       ]);
       
       setLocations(locRes.data);
       setSettings(settingsRes.data);
+      setPhoneTrackers(phoneRes.data);
     } catch (error) {
       console.error('Failed to fetch tracking data:', error);
     } finally {
@@ -114,6 +124,46 @@ export default function LocationTracking() {
     }
   };
 
+  const sendPhoneInvite = async () => {
+    if (!phoneNumber.trim()) {
+      toast.error('Please enter a phone number');
+      return;
+    }
+    setSendingInvite(true);
+    try {
+      const res = await axios.post(`${API_URL}/api/tracking/phone/invite`, {
+        phone_number: phoneNumber.trim(),
+        member_name: memberName.trim() || phoneNumber.trim(),
+        family_id: family.id
+      });
+      toast.success(res.data.message);
+      if (!res.data.sms_sent) {
+        // Copy approval link to clipboard as fallback
+        if (res.data.approval_link) {
+          navigator.clipboard?.writeText(res.data.approval_link).catch(() => {});
+          toast.info('Approval link copied to clipboard (SMS not configured)');
+        }
+      }
+      setPhoneNumber('');
+      setMemberName('');
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to send invite');
+    } finally {
+      setSendingInvite(false);
+    }
+  };
+
+  const removePhoneTracker = async (phoneId) => {
+    try {
+      await axios.delete(`${API_URL}/api/tracking/phones/${phoneId}`);
+      toast.success('Phone tracker removed');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to remove phone tracker');
+    }
+  };
+
   const formatTimestamp = (timestamp) => {
     const date = new Date(timestamp);
     return date.toLocaleString();
@@ -126,6 +176,20 @@ export default function LocationTracking() {
       </div>
     );
   }
+
+  const allLocations = [
+    ...locations,
+    ...phoneTrackers
+      .filter(p => p.last_location && p.active)
+      .map(p => ({
+        user_name: p.member_name,
+        latitude: p.last_location.latitude,
+        longitude: p.last_location.longitude,
+        timestamp: p.last_location.timestamp,
+        battery_level: p.last_location.battery_level,
+        source: 'phone'
+      }))
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -153,8 +217,9 @@ export default function LocationTracking() {
 
       <div className="max-w-4xl mx-auto px-6 py-8">
         <Tabs defaultValue="map" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
+          <TabsList className="grid w-full grid-cols-4 max-w-lg">
             <TabsTrigger value="map" data-testid="map-tab">Live Map</TabsTrigger>
+            <TabsTrigger value="phones" data-testid="phones-tab">📱 Phones</TabsTrigger>
             <TabsTrigger value="history" data-testid="history-tab">History</TabsTrigger>
             <TabsTrigger value="settings" data-testid="settings-tab">Settings</TabsTrigger>
           </TabsList>
@@ -171,7 +236,7 @@ export default function LocationTracking() {
                 <div className="text-center">
                   <Map className="w-16 h-16 text-secondary/50 mx-auto mb-4" />
                   <p className="text-muted-foreground">Interactive map view</p>
-                  <p className="text-sm text-muted-foreground">Showing {locations.length} family members</p>
+                  <p className="text-sm text-muted-foreground">Showing {allLocations.length} family members</p>
                 </div>
               </div>
 
@@ -185,17 +250,17 @@ export default function LocationTracking() {
                   </Button>
                 </div>
 
-                {locations.length === 0 ? (
+                {allLocations.length === 0 ? (
                   <div className="text-center py-8">
                     <Users className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
                     <p className="text-muted-foreground">No family members are currently sharing their location</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {locations.map((loc, index) => (
+                    {allLocations.map((loc, index) => (
                       <div key={index} className="flex items-center gap-4 p-4 bg-muted/30 rounded-xl">
-                        <div className="w-10 h-10 bg-secondary text-white rounded-full flex items-center justify-center font-bold">
-                          {loc.user_name?.charAt(0).toUpperCase()}
+                        <div className={`w-10 h-10 ${loc.source === 'phone' ? 'bg-accent' : 'bg-secondary'} text-white rounded-full flex items-center justify-center font-bold`}>
+                          {loc.source === 'phone' ? <Phone className="w-4 h-4" /> : loc.user_name?.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium">{loc.user_name}</p>
@@ -221,6 +286,110 @@ export default function LocationTracking() {
                   </div>
                 )}
               </div>
+            </motion.div>
+          </TabsContent>
+
+          {/* Phone Tracking Tab */}
+          <TabsContent value="phones" className="space-y-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="card-base p-6"
+            >
+              <h3 className="font-heading font-bold text-primary mb-2">Cell Phone Tracking</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                Invite a family member's phone by entering their number. They'll receive an SMS with an approval link. Once they approve, their phone's location will show on the map.
+              </p>
+
+              {/* Invite Form */}
+              <div className="bg-muted/30 rounded-xl p-4 mb-6 space-y-3">
+                <div>
+                  <Label className="mb-1 block">Phone Number (E.164 format, e.g. +27821234567)</Label>
+                  <Input
+                    placeholder="+27821234567"
+                    value={phoneNumber}
+                    onChange={e => setPhoneNumber(e.target.value)}
+                    data-testid="phone-number-input"
+                  />
+                </div>
+                <div>
+                  <Label className="mb-1 block">Member Name (optional)</Label>
+                  <Input
+                    placeholder="e.g. Dad's Phone"
+                    value={memberName}
+                    onChange={e => setMemberName(e.target.value)}
+                    data-testid="member-name-input"
+                  />
+                </div>
+                <Button
+                  onClick={sendPhoneInvite}
+                  disabled={sendingInvite || !phoneNumber.trim()}
+                  className="w-full"
+                  data-testid="send-invite-btn"
+                >
+                  {sendingInvite ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4 mr-2" />
+                  )}
+                  Send SMS Invite
+                </Button>
+              </div>
+
+              {/* Privacy Notice */}
+              <div className="flex items-start gap-3 p-4 bg-secondary/10 rounded-xl mb-6">
+                <Shield className="w-5 h-5 text-secondary flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium text-primary">Consent-based:</span> The phone owner must tap the link in the SMS and approve sharing. They can revoke at any time.
+                </p>
+              </div>
+
+              {/* Phone Trackers List */}
+              <h4 className="font-heading font-semibold text-primary mb-3">Invited Phones</h4>
+              {phoneTrackers.length === 0 ? (
+                <div className="text-center py-8">
+                  <Phone className="w-12 h-12 text-muted-foreground/50 mx-auto mb-4" />
+                  <p className="text-muted-foreground">No phone invites sent yet</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {phoneTrackers.map((tracker) => (
+                    <div key={tracker.id} className="flex items-center gap-4 p-4 bg-muted/30 rounded-xl">
+                      <div className="w-10 h-10 bg-accent/20 text-accent rounded-full flex items-center justify-center">
+                        <Phone className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium">{tracker.member_name}</p>
+                        <p className="text-sm text-muted-foreground">{tracker.phone_number}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {tracker.approved && tracker.active ? (
+                          <span className="flex items-center gap-1 text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                            <CheckCircle className="w-3 h-3" /> Active
+                          </span>
+                        ) : tracker.approved && !tracker.active ? (
+                          <span className="flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
+                            <XCircle className="w-3 h-3" /> Paused
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">
+                            <AlertCircle className="w-3 h-3" /> Pending
+                          </span>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removePhoneTracker(tracker.id)}
+                          className="text-destructive hover:text-destructive"
+                          data-testid={`remove-phone-${tracker.id}`}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </motion.div>
           </TabsContent>
 

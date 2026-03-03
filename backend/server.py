@@ -14,6 +14,8 @@ from datetime import datetime, timezone, timedelta
 import jwt
 import bcrypt
 import httpx
+import secrets
+import json
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -30,6 +32,14 @@ JWT_EXPIRATION_HOURS = 72
 
 # OpenAI Config
 OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY', '')
+
+# Twilio Config (for SMS phone tracking invites)
+TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
+TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
+TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER', '')
+
+# App URL (used for SMS links and Stripe redirects)
+APP_URL = os.environ.get('APP_URL', 'http://localhost:3000')
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -221,6 +231,18 @@ class CheckoutRequest(BaseModel):
     origin_url: str
     currency: str = "ZAR"
 
+class PhoneTrackingInvite(BaseModel):
+    phone_number: str  # E.164 format e.g. +27821234567
+    member_name: Optional[str] = ""
+    family_id: str
+
+class PhoneLocationUpdate(BaseModel):
+    token: str
+    latitude: float
+    longitude: float
+    accuracy: Optional[float] = 0
+    battery_level: Optional[int] = 100
+
 # =============================================================================
 # AUTH HELPERS
 # =============================================================================
@@ -360,7 +382,8 @@ async def login(data: UserLogin):
             'family_id': user.get('family_id'),
             'role': user.get('role', 'member'),
             'country': user.get('country', 'ZA'),
-            'currency': user.get('currency', 'ZAR')
+            'currency': user.get('currency', 'ZAR'),
+            'subscription': user.get('subscription', {'active': False})
         }
     }
 
@@ -373,7 +396,8 @@ async def get_me(user: dict = Depends(get_current_user)):
         'family_id': user.get('family_id'),
         'role': user.get('role', 'member'),
         'country': user.get('country', 'ZA'),
-        'currency': user.get('currency', 'ZAR')
+        'currency': user.get('currency', 'ZAR'),
+        'subscription': user.get('subscription', {'active': False})
     }
 
 @api_router.put("/auth/settings")
@@ -859,6 +883,217 @@ async def get_location_history(user_id: str, days: int = 7, user: dict = Depends
     return history
 
 # =============================================================================
+# PHONE TRACKING ROUTES (SMS consent-based)
+# =============================================================================
+
+async def send_tracking_sms(phone_number: str, approval_link: str, family_name: str, inviter_name: str) -> bool:
+    """Send SMS invite for location tracking consent via Twilio"""
+    if not TWILIO_ACCOUNT_SID or not TWILIO_AUTH_TOKEN or not TWILIO_PHONE_NUMBER:
+        logger.warning("Twilio not configured – SMS not sent")
+        return False
+    try:
+        from twilio.rest import Client as TwilioClient
+        twilio_client = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+        message = twilio_client.messages.create(
+            body=(
+                f"Hi! {inviter_name} from the '{family_name}' family on Kinship Journeys "
+                f"would like to track your location. "
+                f"Tap the link to approve: {approval_link} "
+                f"(You can stop sharing at any time.)"
+            ),
+            from_=TWILIO_PHONE_NUMBER,
+            to=phone_number
+        )
+        logger.info(f"SMS sent to {phone_number}: SID {message.sid}")
+        return True
+    except Exception as e:
+        logger.error(f"Twilio SMS error: {str(e)}")
+        return False
+
+
+@api_router.post("/tracking/phone/invite")
+async def invite_phone_tracking(data: PhoneTrackingInvite, user: dict = Depends(get_current_user)):
+    """Send an SMS to a phone number asking them to consent to location sharing"""
+    # Verify user belongs to the family
+    if user.get('family_id') != data.family_id:
+        raise HTTPException(status_code=403, detail="You are not a member of this family")
+
+    family = await db.families.find_one({'id': data.family_id}, {'_id': 0})
+    if not family:
+        raise HTTPException(status_code=404, detail="Family not found")
+
+    # Check if an invite already exists for this phone+family
+    existing = await db.phone_tracking.find_one(
+        {'phone_number': data.phone_number, 'family_id': data.family_id},
+        {'_id': 0}
+    )
+    if existing and existing.get('approved'):
+        return {'message': 'Phone is already approved for tracking', 'token': existing['token']}
+
+    # Generate a secure token
+    token = secrets.token_urlsafe(32)
+    approval_link = f"{APP_URL}/tracking/phone/approve/{token}"
+
+    record = {
+        'id': str(uuid.uuid4()),
+        'token': token,
+        'phone_number': data.phone_number,
+        'member_name': data.member_name or data.phone_number,
+        'family_id': data.family_id,
+        'invited_by': user['id'],
+        'approved': False,
+        'active': False,
+        'created_at': datetime.now(timezone.utc).isoformat(),
+        'approved_at': None,
+        'last_location': None
+    }
+
+    # Upsert by phone+family
+    await db.phone_tracking.update_one(
+        {'phone_number': data.phone_number, 'family_id': data.family_id},
+        {'$set': record},
+        upsert=True
+    )
+
+    sms_sent = await send_tracking_sms(
+        data.phone_number, approval_link,
+        family['name'], user['name']
+    )
+
+    return {
+        'message': 'Invite created' + (' and SMS sent' if sms_sent else ' (SMS not configured)'),
+        'token': token,
+        'approval_link': approval_link,
+        'sms_sent': sms_sent
+    }
+
+
+@api_router.get("/tracking/phone/approve/{token}")
+async def phone_tracking_info(token: str):
+    """Get info about a phone tracking invite (public – no auth required)"""
+    record = await db.phone_tracking.find_one({'token': token}, {'_id': 0})
+    if not record:
+        raise HTTPException(status_code=404, detail="Invalid or expired tracking link")
+
+    family = await db.families.find_one({'id': record['family_id']}, {'_id': 0})
+    inviter = await db.users.find_one({'id': record['invited_by']}, {'_id': 0, 'password': 0})
+
+    return {
+        'token': token,
+        'family_name': family['name'] if family else 'Unknown',
+        'inviter_name': inviter['name'] if inviter else 'A family member',
+        'phone_number': record['phone_number'],
+        'approved': record['approved'],
+        'active': record['active']
+    }
+
+
+@api_router.post("/tracking/phone/approve/{token}")
+async def approve_phone_tracking(token: str):
+    """Approve location sharing consent for a phone (public – no auth required)"""
+    record = await db.phone_tracking.find_one({'token': token}, {'_id': 0})
+    if not record:
+        raise HTTPException(status_code=404, detail="Invalid or expired tracking link")
+
+    await db.phone_tracking.update_one(
+        {'token': token},
+        {'$set': {
+            'approved': True,
+            'active': True,
+            'approved_at': datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    return {'message': 'Location sharing approved', 'token': token}
+
+
+@api_router.post("/tracking/phone/revoke/{token}")
+async def revoke_phone_tracking(token: str):
+    """Revoke consent – can be called by phone user or family admin"""
+    record = await db.phone_tracking.find_one({'token': token}, {'_id': 0})
+    if not record:
+        raise HTTPException(status_code=404, detail="Invalid tracking token")
+
+    await db.phone_tracking.update_one(
+        {'token': token},
+        {'$set': {'active': False}}
+    )
+    return {'message': 'Location sharing stopped'}
+
+
+@api_router.post("/tracking/phone/location")
+async def update_phone_location(data: PhoneLocationUpdate):
+    """Phone submits its GPS location (authenticated by token only)"""
+    record = await db.phone_tracking.find_one({'token': data.token}, {'_id': 0})
+    if not record:
+        raise HTTPException(status_code=404, detail="Invalid tracking token")
+    if not record.get('approved') or not record.get('active'):
+        raise HTTPException(status_code=403, detail="Location sharing not approved or disabled")
+
+    location = {
+        'id': str(uuid.uuid4()),
+        'phone_number': record['phone_number'],
+        'member_name': record['member_name'],
+        'family_id': record['family_id'],
+        'latitude': data.latitude,
+        'longitude': data.longitude,
+        'accuracy': data.accuracy,
+        'battery_level': data.battery_level,
+        'timestamp': datetime.now(timezone.utc).isoformat(),
+        'source': 'phone'
+    }
+
+    # Store latest location on the phone_tracking record
+    await db.phone_tracking.update_one(
+        {'token': data.token},
+        {'$set': {'last_location': location}}
+    )
+
+    # Also add to location history for the family
+    await db.location_history.insert_one(location)
+
+    # Broadcast to family room
+    await sio.emit('phone_location_update', {
+        'phone_number': record['phone_number'],
+        'member_name': record['member_name'],
+        'latitude': data.latitude,
+        'longitude': data.longitude,
+        'timestamp': location['timestamp']
+    }, room=record['family_id'])
+
+    return {'message': 'Location updated'}
+
+
+@api_router.get("/tracking/phones/{family_id}")
+async def get_phone_trackers(family_id: str, user: dict = Depends(get_current_user)):
+    """Get all phone trackers for a family"""
+    if user.get('family_id') != family_id:
+        raise HTTPException(status_code=403, detail="Not a member of this family")
+
+    phones = await db.phone_tracking.find(
+        {'family_id': family_id},
+        {'_id': 0, 'token': 0}  # hide token from list view
+    ).to_list(100)
+    return phones
+
+
+@api_router.delete("/tracking/phones/{phone_id}")
+async def delete_phone_tracker(phone_id: str, user: dict = Depends(get_current_user)):
+    """Delete a phone tracking record (admin only)"""
+    record = await db.phone_tracking.find_one({'id': phone_id}, {'_id': 0})
+    if not record:
+        raise HTTPException(status_code=404, detail="Phone tracker not found")
+
+    family = await db.families.find_one({'id': record['family_id']}, {'_id': 0})
+    is_family_admin = family and family.get('admin_id') == user['id']
+    is_inviter = record.get('invited_by') == user['id']
+    if not (is_family_admin or is_inviter):
+        raise HTTPException(status_code=403, detail="Only family admin can remove phone trackers")
+
+    await db.phone_tracking.delete_one({'id': phone_id})
+    return {'message': 'Phone tracker removed'}
+
+
+# =============================================================================
 # WEATHER ROUTES
 # =============================================================================
 
@@ -1120,6 +1355,90 @@ async def get_payment_status(session_id: str, user: dict = Depends(get_current_u
     except Exception as e:
         logger.error(f"Payment status error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+
+
+@api_router.post("/webhook/stripe")
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhook events to activate subscriptions"""
+    payload = await request.body()
+    sig_header = request.headers.get('stripe-signature', '')
+
+    # Verify webhook signature when secret is configured
+    if STRIPE_WEBHOOK_SECRET:
+        try:
+            import hmac
+            import hashlib
+            # Parse timestamp + signature from header
+            parts = {k: v for k, v in (p.split('=', 1) for p in sig_header.split(',') if '=' in p)}
+            ts = parts.get('t', '')
+            expected = hmac.new(
+                STRIPE_WEBHOOK_SECRET.encode(),
+                f"{ts}.".encode() + payload,
+                hashlib.sha256
+            ).hexdigest()
+            v1_sigs = [v for k, v in parts.items() if k == 'v1']
+            if not any(secrets.compare_digest(expected, sig) for sig in v1_sigs):
+                raise HTTPException(status_code=400, detail="Invalid webhook signature")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Webhook signature verification error: {e}")
+            raise HTTPException(status_code=400, detail="Webhook signature error")
+
+    try:
+        event = json.loads(payload)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
+
+    event_type = event.get('type', '')
+    logger.info(f"Stripe webhook event: {event_type}")
+
+    if event_type == 'checkout.session.completed':
+        session = event.get('data', {}).get('object', {})
+        session_id = session.get('id')
+        payment_status = session.get('payment_status')
+        metadata = session.get('metadata', {})
+        user_id = metadata.get('user_id')
+
+        if payment_status == 'paid' and user_id and session_id:
+            # Mark transaction as paid
+            await db.payment_transactions.update_one(
+                {'session_id': session_id},
+                {'$set': {
+                    'status': 'paid',
+                    'updated_at': datetime.now(timezone.utc).isoformat()
+                }}
+            )
+            # Activate subscription on user account
+            await db.users.update_one(
+                {'id': user_id},
+                {'$set': {
+                    'subscription': {
+                        'active': True,
+                        'plan': metadata.get('plan', 'family'),
+                        'currency': metadata.get('original_currency', 'ZAR'),
+                        'activated_at': datetime.now(timezone.utc).isoformat(),
+                        'session_id': session_id
+                    }
+                }}
+            )
+            logger.info(f"Subscription activated for user {user_id}")
+
+    elif event_type in ('customer.subscription.deleted', 'customer.subscription.paused'):
+        # Deactivate subscription
+        subscription = event.get('data', {}).get('object', {})
+        customer_id = subscription.get('customer')
+        if customer_id:
+            await db.users.update_many(
+                {'stripe_customer_id': customer_id},
+                {'$set': {'subscription.active': False}}
+            )
+
+    return {'received': True}
+
 
 # =============================================================================
 # ADMIN ROUTES

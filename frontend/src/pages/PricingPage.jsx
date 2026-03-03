@@ -1,10 +1,15 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, ArrowRight, Sparkles, Users, Shield, Zap, HelpCircle } from 'lucide-react';
+import axios from 'axios';
+import { Check, ArrowRight, Sparkles, Users, Shield, Zap, HelpCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { useAuth } from '@/context/AuthContext';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const PRICING = {
   monthly: { price: 4.99, period: 'month' },
@@ -17,6 +22,7 @@ const features = [
   'Real-time family chat',
   'AI-powered trip planning',
   'Live location tracking',
+  'Cell phone tracking via SMS',
   'Document vault with alerts',
   'Expense splitting',
   'Weather forecasts',
@@ -34,6 +40,32 @@ const faqs = [
 export default function PricingPage() {
   const [billingPeriod, setBillingPeriod] = useState('yearly');
   const [openFaq, setOpenFaq] = useState(null);
+  const [checkingOut, setCheckingOut] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleCheckout = async () => {
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+    setCheckingOut(true);
+    try {
+      const res = await axios.post(`${API_URL}/api/payments/checkout`, {
+        plan: billingPeriod,
+        origin_url: window.location.origin,
+        currency: user?.currency || 'USD'
+      });
+      if (res.data.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (error) {
+      const detail = error.response?.data?.detail || 'Payment system unavailable. Please try again later.';
+      toast.error(detail);
+    } finally {
+      setCheckingOut(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -126,13 +158,20 @@ export default function PricingPage() {
                   </div>
                 </div>
 
-                <Link to="/auth">
-                  <Button className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-white text-lg py-6 rounded-2xl font-bold shadow-lg shadow-teal-500/30" data-testid="pricing-cta-btn">
-                    Start 7-Day Free Trial
-                    <ArrowRight className="ml-2 w-5 h-5" />
-                  </Button>
-                </Link>
-                <p className="text-center text-sm text-slate-500 mt-4">No credit card required</p>
+                <Button
+                  onClick={handleCheckout}
+                  disabled={checkingOut}
+                  className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-white text-lg py-6 rounded-2xl font-bold shadow-lg shadow-teal-500/30"
+                  data-testid="pricing-cta-btn"
+                >
+                  {checkingOut ? (
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  ) : (
+                    <ArrowRight className="ml-2 w-5 h-5 order-last" />
+                  )}
+                  {user ? 'Subscribe Now' : 'Start 7-Day Free Trial'}
+                </Button>
+                <p className="text-center text-sm text-slate-500 mt-4">No credit card required for trial</p>
               </div>
             </div>
           </motion.div>
@@ -192,3 +231,4 @@ export default function PricingPage() {
     </div>
   );
 }
+
