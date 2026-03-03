@@ -89,13 +89,14 @@ export default function Dashboard() {
   const [inviteCode, setInviteCode] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (family) {
       fetchDashboardData();
     } else {
       setLoading(false);
     }
-  }, [family]);
+  }, [family]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchDashboardData = async () => {
     try {

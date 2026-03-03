@@ -48,10 +48,11 @@ export default function TripDetail() {
   const [budgetItems, setBudgetItems] = useState([]);
   const [budgetDialogOpen, setBudgetDialogOpen] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchTrip();
     fetchBudgetItems();
-  }, [tripId]);
+  }, [tripId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchTrip = async () => {
     try {

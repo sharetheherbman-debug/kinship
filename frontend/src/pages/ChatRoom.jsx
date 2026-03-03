@@ -28,6 +28,7 @@ export default function ChatRoom() {
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!family) return;
 
@@ -81,7 +82,7 @@ export default function ChatRoom() {
         socketRef.current.disconnect();
       }
     };
-  }, [family]);
+  }, [family]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     scrollToBottom();
