@@ -72,7 +72,7 @@ export default function AdminPanel() {
       });
       
       if (response.data.user.is_superadmin || response.data.user.role === 'superadmin') {
-        localStorage.setItem('kinship_token', response.data.token);
+        localStorage.setItem('amarktai_token', response.data.token);
         axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
         setIsAdmin(true);
         fetchAdminData();
@@ -137,7 +137,7 @@ export default function AdminPanel() {
               <Label>Admin Email</Label>
               <Input
                 type="email"
-                placeholder="admin@kinship.app"
+                placeholder="admin@amarktainetwork.com"
                 value={adminEmail}
                 onChange={(e) => setAdminEmail(e.target.value)}
                 className="input-base"
@@ -185,7 +185,7 @@ export default function AdminPanel() {
             <Shield className="w-8 h-8" />
             <div>
               <h1 className="font-heading text-2xl font-bold">Admin Panel</h1>
-              <p className="text-white/70 text-sm">Kinship Journeys Management</p>
+              <p className="text-white/70 text-sm">Amarktai Network Management</p>
             </div>
           </div>
         </div>

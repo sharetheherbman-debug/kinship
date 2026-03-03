@@ -45,7 +45,7 @@ export default function LocationTracking() {
         navigator.geolocation.clearWatch(watchId);
       }
     };
-  }, [family]);
+  }, [family]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchData = async () => {
     try {

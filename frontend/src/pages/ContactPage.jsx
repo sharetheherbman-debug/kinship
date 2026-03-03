@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import axios from 'axios';
 import { 
   Mail, MapPin, Phone, MessageCircle, Clock, Send,
   ArrowRight, Globe, CheckCircle
@@ -11,11 +12,13 @@ import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
+const API_URL = process.env.REACT_APP_BACKEND_URL;
+
 const contactInfo = [
   {
     icon: Mail,
     title: 'Email Us',
-    details: 'hello@kinshipjourneys.com',
+    details: 'hello@amarktainetwork.com',
     subtext: 'We respond within 24 hours',
     gradient: 'from-teal-500 to-cyan-600',
   },
@@ -37,7 +40,7 @@ const contactInfo = [
 
 const faqs = [
   { q: 'How do I reset my password?', a: 'Click "Forgot Password" on the login page, enter your email, and follow the link we send you.' },
-  { q: 'Can I use Kinship offline?', a: 'Yes! Core features like viewing trips and documents work offline. Changes sync when you reconnect.' },
+  { q: 'Can I use this app offline?', a: 'Yes! Core features like viewing trips and documents work offline. Changes sync when you reconnect.' },
   { q: 'How do I invite family members?', a: 'Go to your family settings and share the unique invite code. They can join from the app or website.' },
   { q: 'Is my data secure?', a: 'Absolutely. We use bank-level encryption and never sell your data. You control all privacy settings.' },
 ];
@@ -55,13 +58,15 @@ export default function ContactPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setLoading(false);
-    setSubmitted(true);
-    toast.success('Message sent! We\'ll get back to you soon.');
+    try {
+      const res = await axios.post(`${API_URL}/api/contact`, formData);
+      setLoading(false);
+      setSubmitted(true);
+      toast.success(res.data.message || 'Message sent! We\'ll get back to you soon.');
+    } catch (err) {
+      setLoading(false);
+      toast.error(err.response?.data?.detail || 'Failed to send message. Please try again.');
+    }
   };
 
   return (

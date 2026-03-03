@@ -51,7 +51,7 @@ export default function TripDetail() {
   useEffect(() => {
     fetchTrip();
     fetchBudgetItems();
-  }, [tripId]);
+  }, [tripId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchTrip = async () => {
     try {

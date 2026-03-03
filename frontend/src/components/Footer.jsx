@@ -1,9 +1,31 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Globe, Mail, MapPin, Phone, ArrowRight, Heart } from 'lucide-react';
+import { Globe, Mail, MapPin, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import axios from 'axios';
+import { toast } from 'sonner';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [email, setEmail] = useState('');
+  const [subscribing, setSubscribing] = useState(false);
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setSubscribing(true);
+    try {
+      await axios.post(`${API_URL}/api/newsletter/subscribe`, { email: email.trim() });
+      toast.success('Subscribed! Thanks for joining.');
+      setEmail('');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Subscription failed. Please try again.');
+    } finally {
+      setSubscribing(false);
+    }
+  };
 
   const footerLinks = {
     product: [
@@ -37,15 +59,20 @@ export default function Footer() {
               </p>
             </div>
             <div className="flex gap-3 w-full lg:w-auto">
+              <form onSubmit={handleSubscribe} className="flex gap-3 w-full lg:w-auto">
               <input
                 type="email"
                 placeholder="Enter your email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
                 className="flex-1 lg:w-80 bg-white/5 border border-white/10 rounded-full px-6 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500/50 transition-colors"
               />
-              <Button className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 rounded-full px-6 font-semibold whitespace-nowrap">
-                Subscribe
+              <Button type="submit" disabled={subscribing} className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 rounded-full px-6 font-semibold whitespace-nowrap">
+                {subscribing ? 'Subscribing…' : 'Subscribe'}
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
+              </form>
             </div>
           </div>
         </div>
@@ -60,15 +87,15 @@ export default function Footer() {
               <div className="w-12 h-12 bg-gradient-to-br from-teal-400 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg shadow-teal-500/30">
                 <Globe className="w-7 h-7 text-white" />
               </div>
-              <span className="font-heading font-bold text-xl">Kinship Journeys</span>
+              <span className="font-heading font-bold text-xl">Amarktai Network</span>
             </Link>
             <p className="text-slate-400 leading-relaxed mb-6 max-w-sm">
               Bringing families together through unforgettable travel adventures. Plan, share, and create memories that last a lifetime.
             </p>
             <div className="space-y-3 text-sm">
-              <a href="mailto:hello@kinshipjourneys.com" className="flex items-center gap-3 text-slate-400 hover:text-teal-400 transition-colors">
+              <a href="mailto:hello@amarktainetwork.com" className="flex items-center gap-3 text-slate-400 hover:text-teal-400 transition-colors">
                 <Mail className="w-5 h-5" />
-                hello@kinshipjourneys.com
+                hello@amarktainetwork.com
               </a>
               <div className="flex items-center gap-3 text-slate-400">
                 <MapPin className="w-5 h-5" />
@@ -123,7 +150,7 @@ export default function Footer() {
         {/* Bottom */}
         <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-slate-500 text-sm flex items-center gap-1">
-            © {currentYear} Kinship Journeys. Made with <Heart className="w-4 h-4 text-rose-500 fill-rose-500" /> for families everywhere.
+            © {currentYear} Amarktai Network. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
             <a href="#" className="text-slate-400 hover:text-teal-400 transition-colors" aria-label="Twitter">

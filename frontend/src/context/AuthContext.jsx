@@ -7,7 +7,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('kinship_token'));
+  const [token, setToken] = useState(localStorage.getItem('amarktai_token'));
   const [loading, setLoading] = useState(true);
   const [family, setFamily] = useState(null);
 
@@ -39,7 +39,7 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('Auth check failed:', error);
-        localStorage.removeItem('kinship_token');
+        localStorage.removeItem('amarktai_token');
         setToken(null);
         setUser(null);
       } finally {
@@ -54,7 +54,7 @@ export const AuthProvider = ({ children }) => {
     const response = await axios.post(`${API_URL}/api/auth/login`, { email, password });
     const { token: newToken, user: userData } = response.data;
     
-    localStorage.setItem('kinship_token', newToken);
+    localStorage.setItem('amarktai_token', newToken);
     setToken(newToken);
     setUser(userData);
     
@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
     const response = await axios.post(`${API_URL}/api/auth/register`, { name, email, password, country, currency });
     const { token: newToken, user: userData } = response.data;
     
-    localStorage.setItem('kinship_token', newToken);
+    localStorage.setItem('amarktai_token', newToken);
     setToken(newToken);
     setUser(userData);
     
@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('kinship_token');
+    localStorage.removeItem('amarktai_token');
     setToken(null);
     setUser(null);
     setFamily(null);

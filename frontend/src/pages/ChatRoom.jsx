@@ -81,7 +81,7 @@ export default function ChatRoom() {
         socketRef.current.disconnect();
       }
     };
-  }, [family]);
+  }, [family]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     scrollToBottom();

@@ -45,11 +45,9 @@ export default function Navbar() {
               <Globe className="w-6 h-6 text-white" />
             </div>
             <span className={`font-heading font-bold text-xl transition-colors ${logoColor}`}>
-              Kinship Journeys
+              Amarktai Network
             </span>
           </Link>
-
-          {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link 

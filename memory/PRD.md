@@ -1,4 +1,4 @@
-# Kinship Journeys - Product Requirements Document
+# Amarktai Network - Product Requirements Document
 
 ## Overview
 Family travel planning PWA with modern, unique design - not stock standard.

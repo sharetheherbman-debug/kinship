@@ -1,19 +1,19 @@
 [Unit]
-Description=Kinship Journeys Backend API
+Description=Amarktai Network Backend API
 After=network.target mongod.service
 Wants=mongod.service
 
 [Service]
 User=www-data
 Group=www-data
-WorkingDirectory=/var/www/kinship/backend
-EnvironmentFile=/var/www/kinship/backend/.env
-ExecStart=/var/www/kinship/venv/bin/uvicorn server:app --host 127.0.0.1 --port 8000 --workers 2
+WorkingDirectory=/var/www/amarktai/backend
+EnvironmentFile=/var/www/amarktai/backend/.env
+ExecStart=/var/www/amarktai/venv/bin/uvicorn server:app --host 127.0.0.1 --port 8000 --workers 2
 Restart=on-failure
 RestartSec=5
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=kinship-backend
+SyslogIdentifier=amarktai-backend
 
 [Install]
 WantedBy=multi-user.target

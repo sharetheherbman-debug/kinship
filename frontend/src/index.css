@@ -192,15 +192,4 @@
     font-family: 'DM Sans', sans-serif;
 }
 
-/* Hide Emergent badge */
-#emergent-badge,
-[class*="emergent"], 
-[data-emergent],
-a[href*="emergent"] {
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-    position: absolute !important;
-    left: -9999px !important;
-}
+/* Amarktai Network - no third-party badges */

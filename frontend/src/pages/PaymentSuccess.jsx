@@ -17,7 +17,7 @@ export default function PaymentSuccess() {
     if (sessionId) {
       pollPaymentStatus(sessionId);
     }
-  }, [searchParams]);
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const pollPaymentStatus = async (sessionId, attempts = 0) => {
     const maxAttempts = 5;

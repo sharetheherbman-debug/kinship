@@ -42,7 +42,7 @@ export default function DocumentVault() {
     if (family) {
       fetchDocuments();
     }
-  }, [family]);
+  }, [family]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchDocuments = async () => {
     try {

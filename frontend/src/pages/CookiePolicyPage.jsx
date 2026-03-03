@@ -54,7 +54,7 @@ export default function CookiePolicyPage() {
             <div className="prose prose-invert prose-lg max-w-none">
               <div className="bg-white/5 border border-white/10 rounded-2xl p-8 mb-8">
                 <p className="text-slate-300 leading-relaxed">
-                  This Cookie Policy explains how Kinship Journeys uses cookies and similar technologies to recognize you when you visit our platform.
+                  This Cookie Policy explains how Amarktai Network uses cookies and similar technologies to recognize you when you visit our platform.
                 </p>
               </div>
 
@@ -148,7 +148,7 @@ export default function CookiePolicyPage() {
                     If you have questions about our use of cookies, contact us at:
                   </p>
                   <p className="mt-4">
-                    <strong className="text-white">Email:</strong> privacy@kinshipjourneys.com<br />
+                    <strong className="text-white">Email:</strong> privacy@amarktainetwork.com<br />
                     <strong className="text-white">Address:</strong> Cape Town, South Africa
                   </p>
                 </section>

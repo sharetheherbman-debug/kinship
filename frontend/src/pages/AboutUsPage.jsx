@@ -61,7 +61,7 @@ const values = [
   {
     icon: Globe,
     title: 'Global Community',
-    description: 'Families from 45+ countries use Kinship Journeys. We celebrate diversity in travel styles.',
+    description: 'Families from 45+ countries use Amarktai Network. We celebrate diversity in travel styles.',
     gradient: 'from-teal-500 to-cyan-600',
   },
 ];
@@ -96,7 +96,7 @@ export default function AboutUsPage() {
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-cyan-300">precious</span>
             </h1>
             <p className="text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed">
-              Kinship Journeys was born from a simple truth: planning family trips shouldn't be harder than the trip itself. We're here to change that.
+              Amarktai Network was born from a simple truth: planning family trips shouldn't be harder than the trip itself. We're here to change that.
             </p>
           </motion.div>
         </div>
@@ -122,7 +122,7 @@ export default function AboutUsPage() {
                   Endless WhatsApp groups. Spreadsheets no one updated. Missed flights because someone had the wrong date. By the time they arrived, everyone was already exhausted.
                 </p>
                 <p>
-                  That's when the idea for Kinship Journeys was born. A single platform where families could plan together, stay connected, and actually enjoy the journey—not just the destination.
+                  That's when the idea for Amarktai Network was born. A single platform where families could plan together, stay connected, and actually enjoy the journey—not just the destination.
                 </p>
               </div>
             </motion.div>
@@ -205,7 +205,7 @@ export default function AboutUsPage() {
               The Team
             </span>
             <h2 className="font-heading text-4xl md:text-5xl font-bold text-white mb-6">
-              Meet the family behind Kinship
+              Meet the family behind Amarktai Network
             </h2>
             <p className="text-xl text-slate-400 max-w-2xl mx-auto">
               We're a small team with big hearts, united by our love of travel and family.

@@ -194,7 +194,7 @@ export default function FeaturesPage() {
               And that's just the beginning
             </h2>
             <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-              Discover all the features that make Kinship Journeys the ultimate family travel companion.
+              Discover all the features that make Amarktai Network the ultimate family travel companion.
             </p>
           </motion.div>
 
@@ -232,7 +232,7 @@ export default function FeaturesPage() {
               Why families choose us
             </h2>
             <p className="text-lg text-slate-400">
-              See how Kinship Journeys compares to generic travel apps
+              See how Amarktai Network compares to generic travel apps
             </p>
           </motion.div>
 
@@ -244,7 +244,7 @@ export default function FeaturesPage() {
           >
             <div className="grid grid-cols-3 bg-white/5 border-b border-white/10">
               <div className="p-6 font-heading font-bold text-white">Feature</div>
-              <div className="p-6 text-center font-heading font-bold text-teal-400">Kinship Journeys</div>
+              <div className="p-6 text-center font-heading font-bold text-teal-400">Amarktai Network</div>
               <div className="p-6 text-center font-heading font-bold text-slate-400">Other Apps</div>
             </div>
             {comparisonFeatures.map((item, index) => (
