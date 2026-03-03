@@ -18,6 +18,7 @@ import PaymentSuccess from "@/pages/PaymentSuccess";
 import PaymentCancel from "@/pages/PaymentCancel";
 import LocationTracking from "@/pages/LocationTracking";
 import DocumentVault from "@/pages/DocumentVault";
+import PhoneTrackingApproval from "@/pages/PhoneTrackingApproval";
 import FeaturesPage from "@/pages/FeaturesPage";
 import PricingPage from "@/pages/PricingPage";
 import AboutUsPage from "@/pages/AboutUsPage";
@@ -89,6 +90,7 @@ function AppRoutes() {
         <Route path="/payment/success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
         <Route path="/payment/cancel" element={<ProtectedRoute><PaymentCancel /></ProtectedRoute>} />
         <Route path="/tracking" element={<ProtectedRoute><LocationTracking /></ProtectedRoute>} />
+        <Route path="/tracking/phone/approve/:token" element={<PhoneTrackingApproval />} />
         <Route path="/documents" element={<ProtectedRoute><DocumentVault /></ProtectedRoute>} />
         <Route path="/superadmin-secret-access" element={<AdminPanel />} />
         <Route path="*" element={<Navigate to="/" replace />} />
