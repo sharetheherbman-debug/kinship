@@ -1650,6 +1650,62 @@ async def delete_social_profile(platform: str, user: dict = Depends(get_current_
     await db.social_profiles.delete_one({'user_id': user['id'], 'platform': platform})
     return {'message': f'{platform} profile removed'}
 
+
+# =============================================================================
+# NEWSLETTER & CONTACT FORM
+# =============================================================================
+
+class NewsletterRequest(BaseModel):
+    email: str
+
+class ContactRequest(BaseModel):
+    name: str
+    email: str
+    subject: Optional[str] = None
+    message: str
+
+@api_router.post("/newsletter/subscribe")
+async def newsletter_subscribe(data: NewsletterRequest):
+    """Subscribe an email address to the newsletter"""
+    email = data.email.strip().lower()
+    if not email or '@' not in email:
+        raise HTTPException(status_code=400, detail="Invalid email address")
+    existing = await db.newsletter_subscribers.find_one({'email': email})
+    if existing:
+        return {'message': 'Already subscribed'}
+    await db.newsletter_subscribers.insert_one({
+        'email': email,
+        'subscribed_at': datetime.now(timezone.utc).isoformat(),
+        'active': True
+    })
+    return {'message': 'Subscribed successfully'}
+
+@api_router.post("/contact")
+async def submit_contact(data: ContactRequest):
+    """Save a contact form submission"""
+    await db.contact_submissions.insert_one({
+        'id': str(uuid.uuid4()),
+        'name': data.name,
+        'email': data.email,
+        'subject': data.subject or 'General Enquiry',
+        'message': data.message,
+        'status': 'new',
+        'submitted_at': datetime.now(timezone.utc).isoformat()
+    })
+    return {'message': 'Message received. We\'ll be in touch within 24 hours.'}
+
+@api_router.get("/admin/newsletter")
+async def get_newsletter_subscribers(user: dict = Depends(verify_admin)):
+    """Get all newsletter subscribers (admin only)"""
+    subs = await db.newsletter_subscribers.find({'active': True}, {'_id': 0}).to_list(5000)
+    return {'count': len(subs), 'subscribers': subs}
+
+@api_router.get("/admin/contact-submissions")
+async def get_contact_submissions(user: dict = Depends(verify_admin)):
+    """Get all contact form submissions (admin only)"""
+    submissions = await db.contact_submissions.find({}, {'_id': 0}).sort('submitted_at', -1).to_list(500)
+    return submissions
+
 @sio.event
 async def connect(sid, environ):
     logger.info(f"Client connected: {sid}")
@@ -1702,6 +1758,39 @@ fastapi_app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@fastapi_app.on_event("startup")
+async def load_persisted_config():
+    """On startup, reload any admin-saved API keys from MongoDB into memory."""
+    global OPENAI_API_KEY, STRIPE_API_KEY, STRIPE_WEBHOOK_SECRET
+    global TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER, APP_URL
+    try:
+        config = await db.admin_config.find_one({'_id': 'main'})
+        if config:
+            if config.get('openai_api_key'):
+                OPENAI_API_KEY = config['openai_api_key']
+                os.environ['OPENAI_API_KEY'] = config['openai_api_key']
+            if config.get('stripe_api_key'):
+                STRIPE_API_KEY = config['stripe_api_key']
+                os.environ['STRIPE_API_KEY'] = config['stripe_api_key']
+            if config.get('stripe_webhook_secret'):
+                STRIPE_WEBHOOK_SECRET = config['stripe_webhook_secret']
+                os.environ['STRIPE_WEBHOOK_SECRET'] = config['stripe_webhook_secret']
+            if config.get('twilio_account_sid'):
+                TWILIO_ACCOUNT_SID = config['twilio_account_sid']
+                os.environ['TWILIO_ACCOUNT_SID'] = config['twilio_account_sid']
+            if config.get('twilio_auth_token'):
+                TWILIO_AUTH_TOKEN = config['twilio_auth_token']
+                os.environ['TWILIO_AUTH_TOKEN'] = config['twilio_auth_token']
+            if config.get('twilio_phone_number'):
+                TWILIO_PHONE_NUMBER = config['twilio_phone_number']
+                os.environ['TWILIO_PHONE_NUMBER'] = config['twilio_phone_number']
+            if config.get('app_url'):
+                APP_URL = config['app_url']
+                os.environ['APP_URL'] = config['app_url']
+            logger.info("Loaded persisted admin config from database")
+    except Exception as e:
+        logger.warning(f"Could not load persisted config (DB may not be ready): {e}")
 
 # Wrap FastAPI with Socket.IO
 socket_app = socketio.ASGIApp(sio, other_asgi_app=fastapi_app, socketio_path='/api/socket.io')

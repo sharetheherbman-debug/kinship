@@ -35,7 +35,6 @@ export default function LocationTracking() {
   const [memberName, setMemberName] = useState('');
   const [sendingInvite, setSendingInvite] = useState(false);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (family) {
       fetchData();

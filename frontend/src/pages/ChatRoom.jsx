@@ -28,7 +28,6 @@ export default function ChatRoom() {
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!family) return;
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Kinship Journeys – Ubuntu VPS Deployment Script (Webdock / Ubuntu 22.04)
+# Amarktai Network – Ubuntu VPS Deployment Script (Ubuntu 22.04)
 #
 # Usage:
 #   chmod +x deploy.sh
@@ -11,7 +11,7 @@
 set -euo pipefail
 
 DOMAIN="your-domain.com"        # ← change this
-APP_DIR="/var/www/kinship"
+APP_DIR="/var/www/amarktai"
 REPO_URL="https://github.com/sharetheherbman-debug/kinship.git"
 BRANCH="main"
 
@@ -22,7 +22,7 @@ if [ "$DOMAIN" = "your-domain.com" ]; then
 fi
 
 echo "============================================================"
-echo " Kinship Journeys – VPS Setup"
+echo " Amarktai Network – VPS Setup"
 echo " Domain : $DOMAIN"
 echo " App dir: $APP_DIR"
 echo "============================================================"
@@ -97,18 +97,18 @@ yarn build
 
 # ---- 7. Systemd service -----------------------------------------------------
 echo "[7/9] Installing systemd service..."
-cp "$APP_DIR/kinship-backend.service" /etc/systemd/system/kinship-backend.service
+cp "$APP_DIR/kinship-backend.service" /etc/systemd/system/amarktai-backend.service
 systemctl daemon-reload
-systemctl enable kinship-backend
-systemctl restart kinship-backend
+systemctl enable amarktai-backend
+systemctl restart amarktai-backend
 
 # ---- 8. Nginx ---------------------------------------------------------------
 echo "[8/9] Configuring Nginx..."
 # Replace placeholder domain in config
 sed "s/your-domain.com/$DOMAIN/g" "$APP_DIR/nginx.conf" \
-    > /etc/nginx/sites-available/kinship
+    > /etc/nginx/sites-available/amarktai
 
-ln -sf /etc/nginx/sites-available/kinship /etc/nginx/sites-enabled/kinship
+ln -sf /etc/nginx/sites-available/amarktai /etc/nginx/sites-enabled/amarktai
 rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl reload nginx
 
@@ -121,13 +121,13 @@ certbot --nginx -d "$DOMAIN" -d "www.$DOMAIN" \
 echo ""
 echo "============================================================"
 echo " ✅  Deployment complete!"
-echo "    Backend service : sudo systemctl status kinship-backend"
-echo "    Logs            : journalctl -u kinship-backend -f"
+echo "    Backend service : sudo systemctl status amarktai-backend"
+echo "    Logs            : journalctl -u amarktai-backend -f"
 echo "    Frontend URL    : https://$DOMAIN"
 echo ""
 echo " Next steps:"
 echo "  1. Edit $APP_DIR/backend/.env with your secrets"
 echo "  2. Edit $APP_DIR/frontend/.env with REACT_APP_BACKEND_URL"
 echo "  3. Rebuild frontend: cd $APP_DIR/frontend && yarn build"
-echo "  4. Restart backend: sudo systemctl restart kinship-backend"
+echo "  4. Restart backend: sudo systemctl restart amarktai-backend"
 echo "============================================================"

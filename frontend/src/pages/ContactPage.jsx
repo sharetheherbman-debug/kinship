@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import axios from 'axios';
 import { 
   Mail, MapPin, Phone, MessageCircle, Clock, Send,
   ArrowRight, Globe, CheckCircle
@@ -10,6 +11,8 @@ import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const contactInfo = [
   {
@@ -55,13 +58,15 @@ export default function ContactPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
-    // Simulate form submission
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    setLoading(false);
-    setSubmitted(true);
-    toast.success('Message sent! We\'ll get back to you soon.');
+    try {
+      const res = await axios.post(`${API_URL}/api/contact`, formData);
+      setLoading(false);
+      setSubmitted(true);
+      toast.success(res.data.message || 'Message sent! We\'ll get back to you soon.');
+    } catch (err) {
+      setLoading(false);
+      toast.error(err.response?.data?.detail || 'Failed to send message. Please try again.');
+    }
   };
 
   return (

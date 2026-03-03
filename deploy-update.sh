@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Kinship Journeys – Zero-downtime update script
+# Amarktai Network – Zero-downtime update script
 # Run this to deploy new code changes to an already-set-up VPS
 # =============================================================================
 set -euo pipefail
 
-APP_DIR="/var/www/kinship"
+APP_DIR="/var/www/amarktai"
 BRANCH="main"
 
 echo "[1/4] Pulling latest code..."
@@ -21,6 +21,6 @@ yarn install --frozen-lockfile --silent
 yarn build
 
 echo "[4/4] Restarting backend service..."
-systemctl restart kinship-backend
+systemctl restart amarktai-backend
 
 echo "✅  Update complete."

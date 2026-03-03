@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+Allow: /features
+Allow: /pricing
+Allow: /about
+Allow: /contact
+Allow: /privacy
+Allow: /terms
+Allow: /cookies
+
+# Block auth and app pages from indexing
+Disallow: /dashboard
+Disallow: /trips
+Disallow: /chat
+Disallow: /ai-assistant
+Disallow: /tracking
+Disallow: /documents
+Disallow: /settings
+Disallow: /superadmin-secret-access
+Disallow: /payment/
+
+Sitemap: https://your-domain.com/sitemap.xml

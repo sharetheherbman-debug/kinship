@@ -38,7 +38,6 @@ export default function DocumentVault() {
   const [memberId, setMemberId] = useState('');
   const [country, setCountry] = useState('');
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (family) {
       fetchDocuments();

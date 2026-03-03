@@ -12,7 +12,6 @@ export default function PaymentSuccess() {
   const [status, setStatus] = useState('loading');
   const [paymentDetails, setPaymentDetails] = useState(null);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     const sessionId = searchParams.get('session_id');
     if (sessionId) {

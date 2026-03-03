@@ -1,9 +1,31 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Globe, Mail, MapPin, Phone, ArrowRight } from 'lucide-react';
+import { Globe, Mail, MapPin, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import axios from 'axios';
+import { toast } from 'sonner';
+
+const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const [email, setEmail] = useState('');
+  const [subscribing, setSubscribing] = useState(false);
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setSubscribing(true);
+    try {
+      await axios.post(`${API_URL}/api/newsletter/subscribe`, { email: email.trim() });
+      toast.success('Subscribed! Thanks for joining.');
+      setEmail('');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Subscription failed. Please try again.');
+    } finally {
+      setSubscribing(false);
+    }
+  };
 
   const footerLinks = {
     product: [
@@ -37,15 +59,20 @@ export default function Footer() {
               </p>
             </div>
             <div className="flex gap-3 w-full lg:w-auto">
+              <form onSubmit={handleSubscribe} className="flex gap-3 w-full lg:w-auto">
               <input
                 type="email"
                 placeholder="Enter your email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
                 className="flex-1 lg:w-80 bg-white/5 border border-white/10 rounded-full px-6 py-3 text-white placeholder:text-slate-500 focus:outline-none focus:border-teal-500/50 transition-colors"
               />
-              <Button className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 rounded-full px-6 font-semibold whitespace-nowrap">
-                Subscribe
+              <Button type="submit" disabled={subscribing} className="bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 rounded-full px-6 font-semibold whitespace-nowrap">
+                {subscribing ? 'Subscribing…' : 'Subscribe'}
                 <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
+              </form>
             </div>
           </div>
         </div>

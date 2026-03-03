@@ -104,12 +104,13 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Left Side - Image */}
-      <div className="hidden lg:flex lg:w-1/2 relative">
+      {/* Left Side - Image with gradient fallback */}
+      <div className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-teal-600 via-cyan-700 to-slate-800">
         <img 
           src="https://images.pexels.com/photos/3811863/pexels-photo-3811863.jpeg" 
           alt="Friends planning a trip"
-          className="w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover"
+          onError={e => { e.currentTarget.style.display = 'none'; }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary/40 flex items-center justify-center p-12">
           <div className="max-w-lg text-white">
