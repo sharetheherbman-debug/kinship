@@ -15,6 +15,7 @@ import jwt
 import bcrypt
 import httpx
 import secrets
+import json
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -1083,7 +1084,9 @@ async def delete_phone_tracker(phone_id: str, user: dict = Depends(get_current_u
         raise HTTPException(status_code=404, detail="Phone tracker not found")
 
     family = await db.families.find_one({'id': record['family_id']}, {'_id': 0})
-    if not family or (family.get('admin_id') != user['id'] and record.get('invited_by') != user['id']):
+    is_family_admin = family and family.get('admin_id') == user['id']
+    is_inviter = record.get('invited_by') == user['id']
+    if not (is_family_admin or is_inviter):
         raise HTTPException(status_code=403, detail="Only family admin can remove phone trackers")
 
     await db.phone_tracking.delete_one({'id': phone_id})
@@ -1385,9 +1388,8 @@ async def stripe_webhook(request: Request):
             logger.error(f"Webhook signature verification error: {e}")
             raise HTTPException(status_code=400, detail="Webhook signature error")
 
-    import json as _json
     try:
-        event = _json.loads(payload)
+        event = json.loads(payload)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
 

@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import {
-  MapPin, Shield, CheckCircle, XCircle, Loader2, Battery, Navigation
+  MapPin, Shield, CheckCircle, XCircle, Loader2, Navigation
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -23,26 +23,27 @@ export default function PhoneTrackingApproval() {
   const intervalRef = useRef(null);
 
   useEffect(() => {
+    const fetchInfo = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/api/tracking/phone/approve/${token}`);
+        setInfo(res.data);
+        if (res.data.approved && res.data.active) {
+          setApproved(true);
+          startSendingLocation();
+        }
+      } catch (error) {
+        toast.error('Invalid or expired tracking link');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchInfo();
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
-
-  const fetchInfo = async () => {
-    try {
-      const res = await axios.get(`${API_URL}/api/tracking/phone/approve/${token}`);
-      setInfo(res.data);
-      if (res.data.approved && res.data.active) {
-        setApproved(true);
-        startSendingLocation();
-      }
-    } catch (error) {
-      toast.error('Invalid or expired tracking link');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const approve = async () => {
     setApproving(true);

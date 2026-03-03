@@ -15,6 +15,12 @@ APP_DIR="/var/www/kinship"
 REPO_URL="https://github.com/sharetheherbman-debug/kinship.git"
 BRANCH="main"
 
+# Validate domain has been configured
+if [ "$DOMAIN" = "your-domain.com" ]; then
+    echo "❌  ERROR: Please edit deploy.sh and set DOMAIN to your actual domain before running."
+    exit 1
+fi
+
 echo "============================================================"
 echo " Kinship Journeys – VPS Setup"
 echo " Domain : $DOMAIN"
