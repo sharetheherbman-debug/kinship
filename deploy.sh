@@ -10,7 +10,7 @@
 # =============================================================================
 set -euo pipefail
 
-DOMAIN="your-domain.com"        # ← change this
+DOMAIN="kinship.amarktai.com"        # ← change this
 APP_DIR="/var/www/amarktai"
 REPO_URL="https://github.com/sharetheherbman-debug/kinship.git"
 BRANCH="main"
