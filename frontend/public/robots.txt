@@ -19,4 +19,4 @@ Disallow: /settings
 Disallow: /superadmin-secret-access
 Disallow: /payment/
 
-Sitemap: https://your-domain.com/sitemap.xml
+Sitemap: https://kinship.amarktai.com/sitemap.xml
